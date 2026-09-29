@@ -31,4 +31,5 @@ export const REFRESH = {
   requests: 10_000,
   miniPage: 10 * 60_000,
   notices: 30 * 60_000,
+  youtube: 2 * 60_000, // 보이는 방송(유튜브 라이브) 확인
 };

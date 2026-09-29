@@ -120,6 +120,17 @@ input { font: inherit; color: inherit; }
   font-size: 12px; font-weight: 700; transition: background 0.15s;
 }
 .linkbtn:hover { background: var(--accent-soft); }
+/* 보이는 방송: 평소에는 회색, 유튜브 라이브 중에만 주황색 */
+.linkbtn--off { border-color: #e4e4e8; color: #a3a3aa; }
+.linkbtn--off:hover { background: #f6f6f7; color: #77777e; }
+.linkbtn--live { border-color: var(--accent); background: var(--accent); color: #fff; }
+.linkbtn--live:hover { background: var(--accent-deep); }
+.linkbtn__tag {
+  padding: 1px 5px; border-radius: 4px; background: #fff; color: var(--accent);
+  font-size: 8px; font-weight: 900; letter-spacing: 0.3px;
+}
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: live-blink 1.4s ease-in-out infinite; }
+@keyframes live-blink { 50% { opacity: 0.25; } }
 .notice {
   display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 8px;
   background: var(--field); text-align: left; overflow: hidden;
@@ -200,6 +211,7 @@ input { font: inherit; color: inherit; }
 }
 .sch__time { font-size: 12px; font-weight: 700; color: var(--muted); padding-top: 1px; font-variant-numeric: tabular-nums; }
 .sch__title { font-size: 13px; font-weight: 700; color: #333; }
+.sch__video { display: inline-flex; margin-left: 5px; vertical-align: -2px; color: var(--accent); }
 .sch__sub { margin-top: 3px; font-size: 11px; color: var(--accent); }
 .sch.is-onair { margin: 0 -8px; padding: 12px 10px; border-radius: 9px; background: var(--accent-soft); border-bottom-color: transparent; }
 .sch.is-onair .sch__time, .sch.is-onair .sch__title { color: var(--accent); }

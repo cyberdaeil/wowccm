@@ -1,6 +1,7 @@
 import { LINKS } from "../config";
 import type { ScheduleItem } from "../lib/api";
 import { openUrl } from "../lib/tauri";
+import { TvIcon } from "./Icons";
 
 export function SchedulePanel({ items }: { items: ScheduleItem[] | null }) {
   return (
@@ -14,6 +15,11 @@ export function SchedulePanel({ items }: { items: ScheduleItem[] | null }) {
             <div className="sch__info">
               <div className="sch__title">
                 {s.title}
+                {s.visible && (
+                  <span className="sch__video" title="보이는 방송">
+                    <TvIcon size={13} />
+                  </span>
+                )}
                 {s.onair && <span className="badge">ON AIR</span>}
               </div>
               {s.sub && <div className="sch__sub">└ {s.sub}</div>}

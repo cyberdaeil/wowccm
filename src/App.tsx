@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { REFRESH, STATION } from "./config";
-import { getDjImage, getMiniPage, getNotices, getProgram, getRequests, getSong } from "./lib/api";
+import { getDjImage, getMiniPage, getNotices, getProgram, getRequests, getSong, getYoutubeLive } from "./lib/api";
 import { usePlayer } from "./lib/usePlayer";
 import { usePolling } from "./lib/usePolling";
 import { useMediaSession } from "./lib/useMediaSession";
@@ -29,6 +29,7 @@ export default function App() {
   const requests = usePolling(getRequests, REFRESH.requests);
   const page = usePolling(getMiniPage, REFRESH.miniPage);
   const notices = usePolling(getNotices, REFRESH.notices);
+  const youtube = usePolling(getYoutubeLive, REFRESH.youtube);
 
   const [tab, setTab] = useState<Tab>("request");
   const [mini, setMini] = useState(false);
@@ -37,6 +38,11 @@ export default function App() {
   const programName = program.data?.program ?? "";
   const onAir = program.data?.onair ?? false;
   const songText = song.data ?? "";
+
+  // 보이는 방송: 유튜브에서 직접 확인한다. 확인이 안 되면 편성표의 📹 표시로 대신 판단한다.
+  const scheduleVisible = page.data?.schedule.some((s) => s.onair && s.visible) ?? false;
+  const visibleLive = youtube.error || !youtube.data ? scheduleVisible : youtube.data.live;
+  const visibleUrl = !youtube.error && youtube.data?.live ? youtube.data.url : null;
 
   useMediaSession(
     programName || "WOWCCM LIVE",
@@ -103,7 +109,7 @@ export default function App() {
       <div className="scroll">
         <Hero image={dj.data ?? null} onAir={onAir} program={programName} song={song.data ?? null} />
         <PlayerControls status={player.status} onToggle={player.toggle} message={player.message} {...vol} />
-        <StationExtras notices={notices.data} />
+        <StationExtras notices={notices.data} visibleLive={visibleLive} visibleUrl={visibleUrl} />
 
         <nav className="tabs" role="tablist">
           {TABS.map((t) => (

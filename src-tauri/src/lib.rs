@@ -1,5 +1,6 @@
 mod now_playing;
 mod wow_api;
+mod youtube;
 
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
@@ -54,6 +55,7 @@ pub fn run() {
             now_playing,
             wow_api::wow_get,
             wow_api::wow_post_request,
+            youtube::youtube_live,
             set_mini_mode,
             hide_to_tray
         ])

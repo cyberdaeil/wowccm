@@ -13,11 +13,11 @@ describe("kstMinutes", () => {
 
 describe("markOnAir", () => {
   const rows = [
-    { time: "00:00", title: "자동방송", sub: "" },
-    { time: "14:00", title: "리민의 음악노트", sub: "with 옹기장이" },
-    { time: "16:00", title: "자동방송", sub: "" },
-    { time: "00:00", title: "김대일의 해피타임", sub: "" }, // 다음 날
-    { time: "01:00", title: "자동방송", sub: "" },
+    { time: "00:00", title: "자동방송", sub: "", visible: false },
+    { time: "14:00", title: "리민의 음악노트", sub: "with 옹기장이", visible: true },
+    { time: "16:00", title: "자동방송", sub: "", visible: false },
+    { time: "00:00", title: "김대일의 해피타임", sub: "", visible: false }, // 다음 날
+    { time: "01:00", title: "자동방송", sub: "", visible: false },
   ];
 
   it("지금 진행 중인 방송 하나만 ON AIR", () => {
@@ -60,7 +60,7 @@ describe("parseMiniPage", () => {
     <template id="scheduleTemplate"><dl class="title_list">
       <li class="title_item"><img src="i.gif">&nbsp;&nbsp;00:00&nbsp;&nbsp;<a>자동방송</a></li>
       <li class="title_item"><img src="i.gif">&nbsp;&nbsp;14:00&nbsp;&nbsp;<a>리민의 음악노트</a>
-        <img title="방송중" alt="ON AIR"><div id=guest_name>┗ with 옹기장이</div></li>
+        <img src="/img/video.png" title="보이는 방송"><img title="방송중" alt="ON AIR"><div id=guest_name>┗ with 옹기장이</div></li>
     </dl></template>`;
 
   it("다시듣기와 편성표를 읽는다", () => {
@@ -69,8 +69,8 @@ describe("parseMiniPage", () => {
       { program: "황성대의 캠프파이어", date: "9월 28일 방송", audio: "http://wowccm.synology.me/podcast/camp.mp3" },
     ]);
     expect(r.schedule).toEqual([
-      { time: "00:00", title: "자동방송", sub: "", onair: false },
-      { time: "14:00", title: "리민의 음악노트", sub: "with 옹기장이", onair: true },
+      { time: "00:00", title: "자동방송", sub: "", visible: false, onair: false },
+      { time: "14:00", title: "리민의 음악노트", sub: "with 옹기장이", visible: true, onair: true },
     ]);
   });
 });

@@ -1,5 +1,5 @@
 import { API, STATION } from "../config";
-import { fetchIcyTitle, wowGet, wowPostRequest } from "./tauri";
+import { fetchIcyTitle, wowGet, wowPostRequest, youtubeLive, type YoutubeLive } from "./tauri";
 
 export interface ProgramInfo {
   program: string;
@@ -30,6 +30,8 @@ export interface ScheduleItem {
   time: string;
   title: string;
   sub: string;
+  /** 편성표에 📹(보이는 방송) 표시가 있는 프로그램 */
+  visible: boolean;
   onair: boolean;
 }
 
@@ -134,13 +136,16 @@ export function parseMiniPage(html: string, now = new Date()) {
     .filter((r) => r.audio);
 
   const rows = [...tpl("scheduleTemplate").querySelectorAll(".title_item")].map((li) => {
+    const visible = [...li.querySelectorAll("img")].some(
+      (img) => /video\.png/.test(img.getAttribute("src") ?? "") || img.getAttribute("title") === "보이는 방송",
+    );
     const sub = clean(li.querySelector("#guest_name")?.textContent).replace(/^┗\s*/, "");
     li.querySelector("#guest_name")?.remove();
     const text = clean(li.textContent).replace(/방송중|ON AIR/gi, "").trim();
     const tm = /(\d{1,2}:\d{2})/.exec(text);
     const time = tm ? tm[1].padStart(5, "0") : "";
     const title = clean(time ? text.replace(tm![1], "") : text);
-    return { time, title, sub };
+    return { time, title, sub, visible };
   });
 
   return { recasts, schedule: markOnAir(rows, now) };
@@ -167,3 +172,5 @@ export function parseNotices(xml: string, limit = 5): Notice[] {
 export async function getNotices(): Promise<Notice[]> {
   return parseNotices(await wowGet(API.notices));
 }
+
+export const getYoutubeLive = (): Promise<YoutubeLive> => youtubeLive();

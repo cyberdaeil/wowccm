@@ -53,3 +53,18 @@ export function openUrl(url: string) {
   }
   void import("@tauri-apps/plugin-opener").then((m) => m.openUrl(url));
 }
+
+export interface YoutubeLive {
+  live: boolean;
+  url: string | null;
+}
+
+/** 유튜브 채널이 지금 라이브 중인지. 브라우저 미리보기에서는 ?ytlive / ?ytoff 로 상태를 흉내 낸다. */
+export async function youtubeLive(): Promise<YoutubeLive> {
+  if (!isTauri) {
+    if (location.search.includes("ytlive")) return { live: true, url: null };
+    if (location.search.includes("ytoff")) return { live: false, url: null };
+    throw new Error("브라우저에서는 유튜브 상태를 확인할 수 없습니다.");
+  }
+  return invoke<YoutubeLive>("youtube_live");
+}
