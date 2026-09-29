@@ -14,6 +14,7 @@ export const API = {
   requests: `${MINI}?mini_request_list=1`, // 사연 목록 HTML 조각
   miniPage: MINI, // 다시듣기·편성표가 이 페이지 안에 들어 있다
   notices: "/bbs/rss.php?bo_table=news", // 공지사항 게시판 RSS
+  youtubeLive: "/wowcast/youtube_live.php", // 보이는 방송 여부 (server/youtube_live.php, YouTube API)
 };
 
 export const LINKS = {

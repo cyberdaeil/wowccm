@@ -22,8 +22,9 @@
 - **방송시간표.** 지금 방송 중인 프로그램을 ON AIR로 표시합니다. 해외에서도 **한국 시각** 기준으로 판단합니다.
 - **보이는 방송**(유튜브 라이브)·**선교후원** 바로가기
   - 보이는 방송 버튼은 **유튜브가 실제로 라이브 중일 때만 주황색**으로 켜지고, 평소에는 회색입니다. 2분마다 자동으로 확인합니다.
+  - 확인 순서: ① 서버의 YouTube API 결과(`server/youtube_live.php`, 설치 방법은 [server/README.md](server/README.md)) → ② 유튜브 채널 페이지 직접 확인 → ③ 편성표
   - 켜져 있을 때 누르면 지금 방송 중인 영상이 바로 열립니다.
-  - 유튜브 확인이 실패하면 편성표의 📹(보이는 방송) 표시와 ON AIR로 대신 판단합니다.
+  - ①② 모두 실패하면 편성표의 📹(보이는 방송) 표시와 ON AIR로 대신 판단합니다.
 
   | 평소 | 보이는 방송 중 |
   |---|---|
@@ -47,7 +48,8 @@
 | 사연 등록 | `POST /wowcast/wow_mini_test_v2.php` | JSON |
 | 다시듣기·편성표 | `/wowcast/wow_mini_test_v2.php` 페이지 안의 `<template>` | HTML |
 | 공지 | `/bbs/rss.php?bo_table=news` | RSS |
-| 보이는 방송 여부 | `https://www.youtube.com/c/wowccm/live` (`src-tauri/src/youtube.rs`) | 유튜브 페이지 |
+| 보이는 방송 여부 | `/wowcast/youtube_live.php` (YouTube API, 서버에 설치 필요) | JSON |
+| 〃 (대체) | `https://www.youtube.com/c/wowccm/live` (`src-tauri/src/youtube.rs`) | 유튜브 페이지 |
 
 > 지금은 **시험용 페이지(`wow_mini_test_v2.php`)** 에 기대고 있습니다. 이 페이지의 이름이나 구조가 바뀌면 앱도 함께 고쳐야 합니다.
 > 플레이어 전용 JSON 주소(예: `/wowcast/player_api.php`)를 하나 만들어 두면 훨씬 안전합니다.

@@ -57,6 +57,8 @@ export function openUrl(url: string) {
 export interface YoutubeLive {
   live: boolean;
   url: string | null;
+  videoId?: string | null;
+  title?: string;
 }
 
 /** 유튜브 채널이 지금 라이브 중인지. 브라우저 미리보기에서는 ?ytlive / ?ytoff 로 상태를 흉내 낸다. */

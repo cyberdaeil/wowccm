@@ -173,4 +173,20 @@ export async function getNotices(): Promise<Notice[]> {
   return parseNotices(await wowGet(API.notices));
 }
 
-export const getYoutubeLive = (): Promise<YoutubeLive> => youtubeLive();
+/**
+ * 보이는 방송(유튜브 라이브) 여부.
+ * 1순위: wowccm.net 서버가 YouTube API로 확인한 결과 (API 키는 서버에만 있다)
+ * 2순위: 앱이 유튜브 채널 페이지를 직접 확인
+ * 둘 다 실패하면 오류를 던지고, 화면은 편성표의 보이는 방송 표시로 대신 판단한다.
+ */
+export async function getYoutubeLive(): Promise<YoutubeLive> {
+  try {
+    const d = JSON.parse(await wowGet(API.youtubeLive));
+    if (typeof d.live === "boolean" && !d.error) {
+      return { live: d.live, url: d.url ?? null, videoId: d.videoId ?? null, title: d.title ?? "" };
+    }
+  } catch {
+    /* 서버 파일이 아직 없거나 오류 → 다음 방법 */
+  }
+  return youtubeLive();
+}
