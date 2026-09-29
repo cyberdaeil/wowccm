@@ -47,34 +47,8 @@ export function RequestPanel({ posts, error, onPosted }: Props) {
   };
 
   return (
-    <div className="panel">
-      <form
-        className="write"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit();
-        }}
-      >
-        <input
-          className="write__name"
-          value={name}
-          maxLength={5}
-          placeholder="이름"
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          className="write__msg"
-          value={content}
-          placeholder="사연 또는 신청곡을 입력해 주세요"
-          onChange={(e) => setContent(e.target.value)}
-        />
-        <button className="write__send" disabled={sending}>
-          {sending ? "등록중" : "등록"}
-        </button>
-      </form>
-      {notice && <p className="write__notice">{notice}</p>}
-
-      <div className="rows">
+    <div className="panel panel--request">
+      <div className="rows rows--scroll">
         {posts === null && !error && <p className="rows__empty">사연을 불러오는 중…</p>}
         {posts === null && error && <p className="rows__empty">사연을 불러오지 못했습니다.</p>}
         {posts?.length === 0 && <p className="rows__empty">첫 사연을 남겨 주세요.</p>}
@@ -88,6 +62,33 @@ export function RequestPanel({ posts, error, onPosted }: Props) {
             </div>
           </div>
         ))}
+      </div>
+      <div className="write-dock">
+        <form
+          className="write"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <input
+            className="write__name"
+            value={name}
+            maxLength={5}
+            placeholder="이름"
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            className="write__msg"
+            value={content}
+            placeholder="사연 또는 신청곡을 입력해 주세요"
+            onChange={(e) => setContent(e.target.value)}
+          />
+          <button className="write__send" disabled={sending}>
+            {sending ? "등록중" : "등록"}
+          </button>
+        </form>
+        {notice && <p className="write__notice">{notice}</p>}
       </div>
     </div>
   );

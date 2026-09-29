@@ -15,8 +15,8 @@
       {
         "label": "main",
         "title": "WOWCCM Player",
-        "width": 400,
-        "height": 840,
+        "width": 780,
+        "height": 560,
         "minWidth": 360,
         "minHeight": 72,
         "resizable": false,

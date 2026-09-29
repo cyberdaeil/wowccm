@@ -28,8 +28,11 @@ export async function fetchIcyTitle(url: string): Promise<string | null> {
   }
 }
 
-export function setMiniMode(mini: boolean, alwaysOnTop: boolean) {
-  if (isTauri) void invoke("set_mini_mode", { mini, alwaysOnTop });
+export type WindowMode = "wide" | "player" | "mini";
+
+/** wide: 플레이어 + 오른쪽 창, player: 플레이어만, mini: 가로 바 */
+export function setWindowMode(mode: WindowMode, alwaysOnTop = false) {
+  if (isTauri) void invoke("set_window_mode", { mode, alwaysOnTop });
 }
 
 export function hideToTray() {

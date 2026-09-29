@@ -82,3 +82,9 @@ export const HeartIcon = ({ size }: P) => (
     <path d="M20.8 8.6a5 5 0 0 0-8.8-3.2 5 5 0 0 0-8.8 3.2c0 5.4 8.8 10.4 8.8 10.4s8.8-5 8.8-10.4z" />
   </svg>
 );
+export const PanelIcon = ({ size }: P) => (
+  <svg {...base(size)}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M14 4v16" />
+  </svg>
+);

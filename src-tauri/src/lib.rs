@@ -8,7 +8,9 @@ use tauri::{
     AppHandle, Emitter, LogicalSize, Manager, WindowEvent,
 };
 
-const FULL_SIZE: (f64, f64) = (400.0, 840.0);
+/// 창 크기: 플레이어만 / 플레이어 + 오른쪽 창(사연·다시듣기·편성표) / 미니 바
+const PLAYER_SIZE: (f64, f64) = (400.0, 560.0);
+const WIDE_SIZE: (f64, f64) = (780.0, 560.0);
 const MINI_SIZE: (f64, f64) = (380.0, 72.0);
 
 #[tauri::command]
@@ -16,13 +18,17 @@ async fn now_playing(url: String) -> Result<Option<String>, String> {
     now_playing::fetch_stream_title(&url).await
 }
 
-/// 미니 모드: 창을 작은 가로 바로 줄이고 항상 위에 둔다.
+/// 창 모드 전환. 미니 모드일 때만 "항상 위에 표시"를 적용한다.
 #[tauri::command]
-fn set_mini_mode(app: AppHandle, mini: bool, always_on_top: bool) -> Result<(), String> {
+fn set_window_mode(app: AppHandle, mode: String, always_on_top: bool) -> Result<(), String> {
     let win = app.get_webview_window("main").ok_or("no main window")?;
-    let (w, h) = if mini { MINI_SIZE } else { FULL_SIZE };
+    let (w, h) = match mode.as_str() {
+        "mini" => MINI_SIZE,
+        "player" => PLAYER_SIZE,
+        _ => WIDE_SIZE,
+    };
     win.set_size(LogicalSize::new(w, h)).map_err(|e| e.to_string())?;
-    win.set_always_on_top(mini && always_on_top)
+    win.set_always_on_top(mode == "mini" && always_on_top)
         .map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -56,7 +62,7 @@ pub fn run() {
             wow_api::wow_get,
             wow_api::wow_post_request,
             youtube::youtube_live,
-            set_mini_mode,
+            set_window_mode,
             hide_to_tray
         ])
         .setup(|app| {

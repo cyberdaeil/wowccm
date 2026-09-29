@@ -28,7 +28,11 @@ button:disabled { cursor: default; opacity: 0.6; }
 input { font: inherit; color: inherit; }
 
 .app { display: flex; flex-direction: column; height: 100%; }
-.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+/* 왼쪽: 플레이어(폭 고정) / 오른쪽: 사연·다시듣기·방송시간표 */
+.body { flex: 1; min-height: 0; display: flex; }
+.player-col { flex: 0 0 400px; width: 400px; min-height: 0; overflow-y: auto; overflow-x: hidden; background: #fff; }
+.side { flex: 1; min-width: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: #fff; }
+.side__body { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* 헤더 */
 .header {
@@ -40,6 +44,15 @@ input { font: inherit; color: inherit; }
 .logo__wow { color: var(--accent); margin-right: 2px; }
 .logo small { margin-left: 5px; font-size: 9px; font-weight: 800; letter-spacing: 0.2px; color: #aaa; }
 .header__right { display: flex; align-items: center; gap: 8px; }
+.live, .sidebtn { white-space: nowrap; flex-shrink: 0; }
+/* 오른쪽 창을 접은 좁은 화면에서는 로고 옆 PLAYER 글자를 숨긴다 */
+.app:not(.app--wide) .logo small { display: none; }
+.sidebtn {
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 13px;
+  border: 1px solid #e4e4e8; color: #77777e; font-size: 11px; font-weight: 700; transition: all 0.15s;
+}
+.sidebtn:hover { border-color: #f1c59f; color: var(--accent); }
+.sidebtn.is-on { border-color: #f1c59f; background: var(--accent-soft); color: var(--accent); }
 .live {
   display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px;
   background: var(--accent); color: #fff; font-size: 9px; font-weight: 900; letter-spacing: 0.45px;
@@ -55,7 +68,7 @@ input { font: inherit; color: inherit; }
 
 /* 진행자 이미지 + 곡 정보 */
 .hero { background: #fff; }
-.cover { position: relative; height: 200px; background: #efeff1; overflow: hidden; }
+.cover { position: relative; height: 190px; background: #efeff1; overflow: hidden; }
 .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cover__empty {
   height: 100%; display: grid; place-items: center; font-size: 30px; font-weight: 900; letter-spacing: -1px;
@@ -92,7 +105,7 @@ input { font: inherit; color: inherit; }
 }
 
 /* 재생 + 볼륨 */
-.controls { padding: 16px 18px 12px; background: #fff; }
+.controls { padding: 14px 18px 10px; background: #fff; }
 .controls__row { display: flex; align-items: center; gap: 18px; padding-left: 20px; }
 .play {
   flex-shrink: 0; display: grid; place-items: center; border-radius: 50%;
@@ -158,8 +171,8 @@ input { font: inherit; color: inherit; }
 
 /* 탭 */
 .tabs {
-  position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: repeat(3, 1fr);
-  background: #fff; border-top: 8px solid var(--gap); border-bottom: 1px solid var(--line);
+  flex-shrink: 0; display: grid; grid-template-columns: repeat(3, 1fr);
+  background: #fff; border-bottom: 1px solid var(--line);
 }
 .tab {
   padding: 14px 2px 11px; font-size: 13px; font-weight: 700; color: #8d8d94;
@@ -171,7 +184,12 @@ input { font: inherit; color: inherit; }
 .rows { border-top: 1px solid var(--line); }
 .rows__empty { margin: 0; padding: 24px 0; text-align: center; font-size: 12px; color: var(--muted); }
 
-/* 사연&신청곡 */
+/* 사연&신청곡: 목록은 스크롤, 입력창은 아래 고정 (라디오 앱 채팅창 방식) */
+.panel--request { display: flex; flex-direction: column; height: 100%; padding: 0; }
+.rows--scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px; border-top: 0; }
+.write-dock { flex-shrink: 0; padding: 10px 14px 12px; border-top: 1px solid var(--line); background: #fff; }
+.write-dock .write { margin-bottom: 0; }
+.write-dock .write__notice { margin: 6px 0 0; }
 .write { display: flex; gap: 6px; margin-bottom: 13px; }
 .write input {
   height: 38px; border: 1px solid #e8e8eb; border-radius: 8px; padding: 0 10px; background: var(--field);
@@ -244,5 +262,5 @@ input { font: inherit; color: inherit; }
 .mini__side { display: flex; flex-direction: column; }
 .mini__side .winbtn { width: 24px; height: 24px; }
 
-.scroll::-webkit-scrollbar { width: 6px; }
-.scroll::-webkit-scrollbar-thumb { background: #e2e2e6; border-radius: 3px; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #e2e2e6; border-radius: 3px; }

@@ -15,7 +15,7 @@ import {
 import { usePlayer } from "./lib/usePlayer";
 import { usePolling } from "./lib/usePolling";
 import { useMediaSession } from "./lib/useMediaSession";
-import { onTrayToggle, openUrl, setMiniMode } from "./lib/tauri";
+import { onTrayToggle, openUrl, setWindowMode } from "./lib/tauri";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PlayerControls } from "./components/PlayerControls";
@@ -26,6 +26,22 @@ import { SchedulePanel } from "./components/SchedulePanel";
 import { MiniPlayer } from "./components/MiniPlayer";
 
 type Tab = "request" | "recast" | "schedule";
+
+const SIDE_KEY = "wowccm.side";
+function loadSideOpen(): boolean {
+  try {
+    return localStorage.getItem(SIDE_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+function saveSideOpen(open: boolean) {
+  try {
+    localStorage.setItem(SIDE_KEY, open ? "1" : "0");
+  } catch {
+    /* 무시 */
+  }
+}
 const TABS: { key: Tab; label: string }[] = [
   { key: "request", label: "사연&신청곡" },
   { key: "recast", label: "다시듣기" },
@@ -45,6 +61,19 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("request");
   const [mini, setMini] = useState(false);
   const [pinned, setPinned] = useState(true);
+  const [sideOpen, setSideOpen] = useState(loadSideOpen);
+
+  // 시작할 때 지난번 창 모양(오른쪽 창 펼침/접힘)으로 맞춘다
+  useEffect(() => {
+    setWindowMode(loadSideOpen() ? "wide" : "player");
+  }, []);
+
+  const toggleSide = () => {
+    const next = !sideOpen;
+    setSideOpen(next);
+    saveSideOpen(next);
+    setWindowMode(next ? "wide" : "player");
+  };
 
   const programName = program.data?.program ?? "";
   const onAir = program.data?.onair ?? false;
@@ -116,7 +145,7 @@ export default function App() {
   const goMini = (m: boolean) => {
     if (m && videoSrc) closeVideo();
     setMini(m);
-    setMiniMode(m, pinned);
+    setWindowMode(m ? "mini" : sideOpen ? "wide" : "player", pinned);
   };
 
   const vol = {
@@ -138,7 +167,7 @@ export default function App() {
         pinned={pinned}
         onPin={() => {
           setPinned(!pinned);
-          setMiniMode(true, !pinned);
+          setWindowMode("mini", !pinned);
         }}
         onExpand={() => goMini(false)}
       />
@@ -146,61 +175,68 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <Header onAir={onAir} onMini={() => goMini(true)} />
-      <div className="scroll">
-        <Hero
-          image={dj.data ?? null}
-          onAir={onAir}
-          program={programName}
-          song={song.data ?? null}
-          video={
-            videoSrc
-              ? {
-                  src: videoSrc,
-                  onClose: closeVideo,
-                  onBrowser: () => {
-                    openUrl(liveVideo?.url ?? LINKS.visibleRadio);
-                    closeVideo();
-                  },
-                }
-              : null
-          }
-        />
-        <PlayerControls status={player.status} onToggle={player.toggle} message={player.message} {...vol} />
-        <StationExtras
-          notices={notices.data}
-          visibleLive={visibleLive}
-          watching={!!videoSrc}
-          onVisible={() => void onVisible()}
-        />
-
-        <nav className="tabs" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              role="tab"
-              aria-selected={tab === t.key}
-              className={`tab ${tab === t.key ? "is-active" : ""}`}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-
-        {tab === "request" && (
-          <RequestPanel posts={requests.data} error={requests.error} onPosted={requests.refresh} />
-        )}
-        {tab === "recast" && (
-          <RecastPanel
-            items={page.data?.recasts ?? (page.error ? [] : null)}
-            currentUrl={player.recastUrl}
-            playing={player.recastPlaying}
-            onToggle={player.toggleRecast}
+    <div className={`app ${sideOpen ? "app--wide" : ""}`}>
+      <Header onAir={onAir} onMini={() => goMini(true)} sideOpen={sideOpen} onToggleSide={toggleSide} />
+      <div className="body">
+        <main className="player-col">
+          <Hero
+            image={dj.data ?? null}
+            onAir={onAir}
+            program={programName}
+            song={song.data ?? null}
+            video={
+              videoSrc
+                ? {
+                    src: videoSrc,
+                    onClose: closeVideo,
+                    onBrowser: () => {
+                      openUrl(liveVideo?.url ?? LINKS.visibleRadio);
+                      closeVideo();
+                    },
+                  }
+                : null
+            }
           />
+          <PlayerControls status={player.status} onToggle={player.toggle} message={player.message} {...vol} />
+          <StationExtras
+            notices={notices.data}
+            visibleLive={visibleLive}
+            watching={!!videoSrc}
+            onVisible={() => void onVisible()}
+          />
+        </main>
+
+        {sideOpen && (
+          <aside className="side">
+            <nav className="tabs" role="tablist">
+              {TABS.map((t) => (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={tab === t.key}
+                  className={`tab ${tab === t.key ? "is-active" : ""}`}
+                  onClick={() => setTab(t.key)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+            <div className="side__body">
+              {tab === "request" && (
+                <RequestPanel posts={requests.data} error={requests.error} onPosted={requests.refresh} />
+              )}
+              {tab === "recast" && (
+                <RecastPanel
+                  items={page.data?.recasts ?? (page.error ? [] : null)}
+                  currentUrl={player.recastUrl}
+                  playing={player.recastPlaying}
+                  onToggle={player.toggleRecast}
+                />
+              )}
+              {tab === "schedule" && <SchedulePanel items={page.data?.schedule ?? (page.error ? [] : null)} />}
+            </div>
+          </aside>
         )}
-        {tab === "schedule" && <SchedulePanel items={page.data?.schedule ?? (page.error ? [] : null)} />}
       </div>
     </div>
   );
