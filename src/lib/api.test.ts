@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { kstMinutes, markOnAir, parseMiniPage, parseNotices, parseRequests } from "./api";
+import { embedSrc, kstMinutes, markOnAir, parseMiniPage, parseNotices, parseRequests, videoIdFromUrl } from "./api";
 
 // 한국 시각 2026-09-29 14:30 = UTC 05:30
 const KST_1430 = new Date("2026-09-29T05:30:00Z");
@@ -90,5 +90,21 @@ describe("parseNotices", () => {
         date: "09-23",
       },
     ]);
+  });
+});
+
+describe("보이는 방송 영상 주소", () => {
+  it("유튜브 주소에서 영상 ID를 꺼낸다", () => {
+    expect(videoIdFromUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    expect(videoIdFromUrl("https://www.youtube.com/channel/UCxyz")).toBeNull();
+    expect(videoIdFromUrl(null)).toBeNull();
+  });
+
+  it("wowccm.net 영상 페이지를 거치거나, 없으면 유튜브를 직접 부른다", () => {
+    expect(embedSrc({ videoId: "abc" }, true)).toBe("https://wowccm.net/wowcast/visible_embed.php?v=abc");
+    expect(embedSrc({ channelId: "UCx" }, true)).toBe("https://wowccm.net/wowcast/visible_embed.php?c=UCx");
+    expect(embedSrc({ videoId: "abc" }, false)).toMatch(/^https:\/\/www\.youtube\.com\/embed\/abc\?autoplay=1/);
+    expect(embedSrc({ channelId: "UCx" }, false)).toMatch(/embed\/live_stream\?channel=UCx&/);
+    expect(embedSrc({}, true)).toBeNull();
   });
 });

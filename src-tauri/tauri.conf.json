@@ -27,7 +27,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data: https://wowccm.net; media-src https://live.wowccm.net http://wowccm.synology.me https://wowccm.synology.me; connect-src 'self' ipc: http://ipc.localhost https:; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; img-src 'self' data: https://wowccm.net; media-src https://live.wowccm.net http://wowccm.synology.me https://wowccm.synology.me; connect-src 'self' ipc: http://ipc.localhost https:; frame-src https://wowccm.net https://www.youtube.com https://www.youtube-nocookie.com; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {

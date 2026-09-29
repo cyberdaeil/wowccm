@@ -140,13 +140,22 @@ export function usePlayer(streamUrl: string) {
     connect();
   }, [connect]);
 
-  const stop = useCallback(() => {
+  const stop = useCallback((msg = "방송이 정지되었습니다.") => {
     wantLive.current = false;
     window.clearTimeout(retry.current.timer);
     disconnectLive();
     setStatus("stopped");
-    setMessage("방송이 정지되었습니다.");
+    setMessage(msg);
   }, []);
+
+  /** 보이는 방송을 볼 때 라디오·다시듣기 소리를 멈춘다. 생방송을 듣던 중이었는지 돌려준다. */
+  const pauseForVideo = useCallback(() => {
+    const wasLive = wantLive.current;
+    if (wasLive) stop("보이는 방송을 보는 동안 라디오 소리를 잠시 멈췄습니다.");
+    const r = recast.current;
+    if (r && !r.paused) r.pause();
+    return wasLive;
+  }, [stop]);
 
   const toggle = useCallback(() => {
     if (wantLive.current) stop();
@@ -183,6 +192,7 @@ export function usePlayer(streamUrl: string) {
     toggle,
     play,
     stop,
+    pauseForVideo,
     recastUrl,
     recastPlaying,
     toggleRecast,

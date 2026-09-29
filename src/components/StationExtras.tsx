@@ -9,11 +9,12 @@ interface Props {
   notices: Notice[] | null;
   /** 보이는 방송(유튜브 라이브) 중인지 */
   visibleLive: boolean;
-  /** 라이브 중인 영상 주소 (없으면 채널 라이브 주소) */
-  visibleUrl: string | null;
+  /** 플레이어 안에서 영상을 보는 중인지 */
+  watching: boolean;
+  onVisible: () => void;
 }
 
-export function StationExtras({ notices, visibleLive, visibleUrl }: Props) {
+export function StationExtras({ notices, visibleLive, watching, onVisible }: Props) {
   const [i, setI] = useState(0);
   const list = notices ?? [];
 
@@ -30,12 +31,18 @@ export function StationExtras({ notices, visibleLive, visibleUrl }: Props) {
       <div className="extras__links">
         <button
           className={`linkbtn ${visibleLive ? "linkbtn--live" : "linkbtn--off"}`}
-          onClick={() => openUrl(visibleUrl ?? LINKS.visibleRadio)}
-          title={visibleLive ? "지금 보이는 방송 중입니다" : "지금은 보이는 방송이 없습니다"}
+          onClick={onVisible}
+          title={
+            watching
+              ? "영상을 닫고 라디오로 돌아갑니다"
+              : visibleLive
+                ? "지금 보이는 방송 중입니다"
+                : "지금은 보이는 방송이 없습니다 (유튜브 채널 열기)"
+          }
         >
           {visibleLive ? <span className="live-dot" aria-hidden /> : <TvIcon size={16} />}
-          보이는 방송
-          {visibleLive && <span className="linkbtn__tag">ON</span>}
+          {watching ? "영상 닫기" : "보이는 방송"}
+          {visibleLive && !watching && <span className="linkbtn__tag">ON</span>}
         </button>
         <button className="linkbtn" onClick={() => openUrl(LINKS.support)}>
           <HeartIcon size={16} />

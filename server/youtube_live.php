@@ -48,9 +48,11 @@ function wowccm_live_status(string $apiKey, string $handle, string $cacheFile, ?
         try {
             // 채널의 "업로드" 재생목록 ID는 바뀌지 않으므로 한 번만 알아내 저장한다
             $uploads = $cache['uploads'] ?? null;
+            $channelId = $cache['channelId'] ?? null;
             if (!$uploads) {
                 $ch = $fetch('channels', ['part' => 'contentDetails', 'forHandle' => $handle], $apiKey);
                 $uploads = $ch['items'][0]['contentDetails']['relatedPlaylists']['uploads'] ?? null;
+                $channelId = $ch['items'][0]['id'] ?? null;
                 if (!$uploads) throw new RuntimeException('channel_not_found');
             }
 
@@ -80,13 +82,20 @@ function wowccm_live_status(string $apiKey, string $handle, string $cacheFile, ?
                     }
                 }
             }
+            $result['channelId'] = $channelId;
             $result['checkedAt'] = date('c');
-            wowccm_write_cache($cacheFile, ['uploads' => $uploads, 'result' => $result, 'expires' => time() + CACHE_TTL]);
+            wowccm_write_cache($cacheFile, [
+                'uploads' => $uploads,
+                'channelId' => $channelId,
+                'result' => $result,
+                'expires' => time() + CACHE_TTL,
+            ]);
             return $result;
         } catch (Throwable $e) {
             $result = ['live' => false, 'error' => $e->getMessage(), 'checkedAt' => date('c')];
             wowccm_write_cache($cacheFile, [
                 'uploads' => $cache['uploads'] ?? null,
+                'channelId' => $cache['channelId'] ?? null,
                 'result' => $result,
                 'expires' => time() + ERROR_TTL,
             ]);

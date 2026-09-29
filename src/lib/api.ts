@@ -183,10 +183,49 @@ export async function getYoutubeLive(): Promise<YoutubeLive> {
   try {
     const d = JSON.parse(await wowGet(API.youtubeLive));
     if (typeof d.live === "boolean" && !d.error) {
-      return { live: d.live, url: d.url ?? null, videoId: d.videoId ?? null, title: d.title ?? "" };
+      return {
+        live: d.live,
+        url: d.url ?? null,
+        videoId: d.videoId ?? null,
+        channelId: d.channelId ?? null,
+        title: d.title ?? "",
+      };
     }
   } catch {
     /* 서버 파일이 아직 없거나 오류 → 다음 방법 */
   }
   return youtubeLive();
+}
+
+/** https://www.youtube.com/watch?v=XXXXXXXXXXX → XXXXXXXXXXX */
+export function videoIdFromUrl(url: string | null | undefined): string | null {
+  const m = /[?&]v=([A-Za-z0-9_-]{11})/.exec(url ?? "");
+  return m ? m[1] : null;
+}
+
+/** wowccm.net에 영상 페이지(visible_embed.php)가 올라가 있는지 */
+export async function hasEmbedPage(): Promise<boolean> {
+  try {
+    return (await wowGet(`${API.visibleEmbed}?check=1`)).trim() === "ok";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 플레이어 안에 띄울 영상 주소.
+ * wowccm.net 영상 페이지를 거치면 유튜브가 "wowccm.net에서 온 재생"으로 인식해 막히지 않는다.
+ * 그 페이지가 없으면 유튜브 영상을 직접 불러온다.
+ */
+export function embedSrc(target: { videoId?: string | null; channelId?: string | null }, viaSite: boolean): string | null {
+  const { videoId, channelId } = target;
+  if (!videoId && !channelId) return null;
+  if (viaSite) {
+    const q = videoId ? `v=${encodeURIComponent(videoId)}` : `c=${encodeURIComponent(channelId!)}`;
+    return `${STATION.site}${API.visibleEmbed}?${q}`;
+  }
+  const opts = "autoplay=1&playsinline=1&rel=0&modestbranding=1";
+  return videoId
+    ? `https://www.youtube.com/embed/${videoId}?${opts}`
+    : `https://www.youtube.com/embed/live_stream?channel=${channelId}&${opts}`;
 }
