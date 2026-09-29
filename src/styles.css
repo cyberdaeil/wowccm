@@ -11,8 +11,8 @@
   --text-2: #555559;
   --muted: #9a9aa1;
   --field: #f8f8f9;
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR",
-    "Malgun Gothic", "맑은 고딕", "Segoe UI", sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -111,8 +111,10 @@ input { font: inherit; color: inherit; }
   background: var(--accent); color: #fff; font-size: 9px; font-weight: 900; letter-spacing: 0.35px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
-.nowinfo { padding: 14px 18px 0; }
-.nowinfo__program { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.6px; line-height: 1.35; }
+.nowinfo { padding: 22px 18px 0; }
+/* 보이는 방송 영상(더 큼)을 볼 때는 창 높이가 꽉 차므로 원래 간격 */
+.cover--video + .nowinfo { padding-top: 14px; }
+.nowinfo__program { margin: 0; font-size: 19px; font-weight: 650; letter-spacing: -0.5px; line-height: 1.35; }
 .nowinfo__song { display: flex; align-items: center; gap: 5px; margin-top: 3px; height: 26px; }
 .nowinfo__title { font-size: 14px; color: #333; letter-spacing: -0.2px; }
 .nowinfo__title--muted { color: var(--muted); }
