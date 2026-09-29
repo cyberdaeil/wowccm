@@ -136,3 +136,19 @@ src-tauri/            데스크톱 앱 (Rust)
   src/now_playing.rs  곡 정보 서버가 안 될 때 스트림에서 곡 정보(ICY) 읽기
 app-icon.svg          앱 아이콘 원본 (npm run icons 로 모든 크기 생성)
 ```
+
+## Mac 서명·공증 (Apple 개발자 계정)
+
+아래 6개 값을 저장소 **Settings → Secrets and variables → Actions**에 등록하면, 다음 빌드부터 Mac 앱에 서명하고 Apple 공증을 받습니다. 그러면 청취자 Mac에서 "확인되지 않은 개발자" 경고 없이 바로 열립니다. 값이 없으면 지금처럼 서명 없이 빌드합니다.
+
+| 이름 | 넣을 값 | 받는 곳 |
+|---|---|---|
+| `APPLE_CERTIFICATE` | **Developer ID Application** 인증서(.p12)를 base64로 바꾼 글자 | Mac 키체인에서 내보내기 → 터미널 `base64 -i 인증서.p12 \| pbcopy` |
+| `APPLE_CERTIFICATE_PASSWORD` | .p12를 내보낼 때 정한 비밀번호 | 직접 정함 |
+| `APPLE_SIGNING_IDENTITY` | `Developer ID Application: 이름 (팀ID)` | 키체인에 보이는 인증서 이름 그대로 |
+| `APPLE_ID` | Apple 개발자 계정 이메일 | |
+| `APPLE_PASSWORD` | **앱 전용 암호** (로그인 비밀번호 아님) | https://account.apple.com → 로그인 및 보안 → 앱 전용 암호 |
+| `APPLE_TEAM_ID` | 10자리 팀 ID | https://developer.apple.com/account → Membership |
+
+- Developer ID 인증서는 개발자 계정의 **Account Holder(대표 관리자)** 만 만들 수 있습니다.
+- 인증서 만들기: https://developer.apple.com/account/resources/certificates/add → **Developer ID Application**을 고릅니다. Mac의 키체인 접근에서 만든 인증서 요청 파일(CSR)이 필요합니다.
