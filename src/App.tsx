@@ -24,6 +24,8 @@ import { RequestPanel } from "./components/RequestPanel";
 import { RecastPanel } from "./components/RecastPanel";
 import { SchedulePanel } from "./components/SchedulePanel";
 import { MiniPlayer } from "./components/MiniPlayer";
+import { UpdateBar } from "./components/UpdateBar";
+import { useUpdater } from "./lib/useUpdater";
 
 type Tab = "request" | "recast" | "schedule";
 
@@ -62,6 +64,7 @@ export default function App() {
   const [mini, setMini] = useState(false);
   const [pinned, setPinned] = useState(true);
   const [sideOpen, setSideOpen] = useState(loadSideOpen);
+  const updater = useUpdater();
 
   // 켜자마자 방송 재생 (한 번만)
   const autoplayed = useRef(false);
@@ -185,6 +188,7 @@ export default function App() {
   return (
     <div className={`app ${sideOpen ? "app--wide" : ""}`}>
       <Header onAir={onAir} onMini={() => goMini(true)} sideOpen={sideOpen} onToggleSide={toggleSide} />
+      <UpdateBar state={updater.state} onInstall={() => void updater.install()} onDismiss={updater.dismiss} />
       <div className="body">
         <main className="player-col">
           <Hero

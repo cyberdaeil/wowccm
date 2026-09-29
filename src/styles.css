@@ -71,6 +71,22 @@ input { font: inherit; color: inherit; }
 
 /* 진행자 이미지 + 곡 정보 */
 .hero { background: #fff; }
+/* 업데이트 알림 띠 */
+.updatebar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 6px 12px 6px 18px;
+  background: var(--accent-soft); border-bottom: 1px solid #f6d3c3; font-size: 12px; color: var(--text-2);
+}
+.updatebar--error { background: #fff4f4; border-bottom-color: #f3cccc; }
+.updatebar__text { flex: 1; min-width: 0; }
+.updatebar__text b { color: var(--accent); }
+.updatebar__btn {
+  flex-shrink: 0; height: 26px; padding: 0 12px; border-radius: 13px; background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 700;
+}
+.updatebar__btn:hover { background: var(--accent-deep); }
+.updatebar__close { flex-shrink: 0; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: #a3a3aa; }
+.updatebar__close:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); }
+
 /* 진행자 사진: 아래 글자·버튼과 같은 18px 여백, 둥근 모서리의 카드 */
 .cover {
   position: relative; height: 172px; margin: 14px 18px 0; border-radius: 12px;

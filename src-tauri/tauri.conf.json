@@ -45,7 +45,10 @@
     ],
     "windows": {
       "nsis": {
-        "languages": ["Korean", "English"],
+        "languages": [
+          "Korean",
+          "English"
+        ],
         "displayLanguageSelector": false,
         "installMode": "currentUser",
         "installerHooks": "./windows/hooks.nsh"
@@ -53,6 +56,18 @@
     },
     "macOS": {
       "minimumSystemVersion": "10.15"
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMzRjA4RjExMDk1NEYzRjgKUldUNDgxUUpFWS93d3hJUlRHeGl4VUE2OW90dHlBazA2eTVMTEVHa1dIM08rVmVnOWt1dnFmdFMK",
+      "endpoints": [
+        "https://github.com/cyberdaeil/wowccm/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

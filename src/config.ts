@@ -23,7 +23,7 @@ export const API = {
 
 export const LINKS = {
   visibleRadio: "https://www.youtube.com/@wowccm/live", // 보이는 방송 (유튜브 라이브)
-  support: "https://wowccm.net/mission/", // 선교후원
+  support: "https://wowccm.net/mission/sub_2.php", // 선교후원 (이전 플레이어와 같은 페이지)
   lyrics: "http://wowccm.iptime.org:8080/GetSongText.htm",
   recastAll: "https://wowccm.net/bbs/board.php?bo_table=recast",
   scheduleAll: "https://wowccm.net/bbs/board.php?bo_table=schedule_list&mode=l",

@@ -57,6 +57,9 @@ pub fn run() {
             show_main(app);
         }))
         .plugin(tauri_plugin_opener::init())
+        // 자동 업데이트: GitHub Releases의 latest.json을 보고 새 버전을 받아 설치한 뒤 다시 실행
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             now_playing,
             wow_api::wow_get,

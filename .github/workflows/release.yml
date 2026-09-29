@@ -45,11 +45,26 @@ jobs:
 
       - run: npm ci
 
+      # 태그 번호를 앱 버전으로 쓴다. (v2.0.1 → 2.0.1)
+      # 자동 업데이트는 이 번호를 비교하므로, 새 버전을 낼 때는 태그 번호만 올리면 된다.
+      # 시험판 태그(v2.0.1-test1)는 뒤의 -test1을 떼고 숫자 부분만 쓴다.
+      - name: 버전 맞추기
+        shell: bash
+        run: |
+          TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          VER="${TAG#v}"
+          VER="${VER%%-*}"
+          echo "앱 버전: $VER"
+          node -e "const fs=require('fs');const f='src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(f,'utf8'));c.version=process.argv[1];fs.writeFileSync(f,JSON.stringify(c,null,2)+'\n')" "$VER"
+
       # Mac 서명·공증은 Apple 개발자 계정이 준비되면 APPLE_CERTIFICATE 등을
       # 저장소 Secrets에 등록하고 아래 env에 추가한다. (빈 값으로 두면 서명을 시도하다 실패한다)
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 자동 업데이트 파일 서명용 비밀 키 (저장소 Settings → Secrets and variables → Actions 에 등록)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
           releaseName: "WOWCCM Player ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
