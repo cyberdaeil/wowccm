@@ -2,6 +2,8 @@
 export const STATION = {
   name: "WOWCCM",
   streamUrl: "https://live.wowccm.net/live.mp3",
+  /** 플레이어를 켜면 바로 방송을 재생한다 */
+  autoplay: true,
   site: "https://wowccm.net",
 };
 

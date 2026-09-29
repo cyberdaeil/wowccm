@@ -63,6 +63,14 @@ export default function App() {
   const [pinned, setPinned] = useState(true);
   const [sideOpen, setSideOpen] = useState(loadSideOpen);
 
+  // 켜자마자 방송 재생 (한 번만)
+  const autoplayed = useRef(false);
+  useEffect(() => {
+    if (!STATION.autoplay || autoplayed.current) return;
+    autoplayed.current = true;
+    player.play();
+  }, [player.play]);
+
   // 시작할 때 지난번 창 모양(오른쪽 창 펼침/접힘)으로 맞춘다
   useEffect(() => {
     setWindowMode(loadSideOpen() ? "wide" : "player");

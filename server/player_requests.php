@@ -12,7 +12,7 @@
  */
 
 // ▼ 사연&신청곡 게시판 이름 (게시판 주소의 bo_table= 뒤에 오는 값)
-const WOWCCM_REQUEST_BOARD = '';
+const WOWCCM_REQUEST_BOARD = 'wapl_memo';
 
 const WOWCCM_DEFAULT_LIMIT = 7;
 const WOWCCM_MAX_LIMIT = 20;

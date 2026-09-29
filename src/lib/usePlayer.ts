@@ -36,8 +36,16 @@ export function usePlayer(streamUrl: string) {
     const a = live.current;
     if (!a) return;
     a.src = `${streamUrl}?_live=${Date.now()}`;
-    a.play().catch(() => {
-      /* 오류는 error 이벤트에서 처리 */
+    a.play().catch((e: unknown) => {
+      // 시스템이 자동 재생을 막은 경우: 연결 중 상태로 멈춰 있지 않고 재생 버튼을 기다린다.
+      // (그 밖의 오류는 error 이벤트에서 다시 연결한다)
+      if (e instanceof DOMException && e.name === "NotAllowedError") {
+        wantLive.current = false;
+        a.removeAttribute("src");
+        a.load();
+        setStatus("stopped");
+        setMessage("재생 버튼을 눌러 방송을 들어보세요.");
+      }
     });
   }, [streamUrl]);
 
