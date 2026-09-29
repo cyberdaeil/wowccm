@@ -12,8 +12,8 @@ export function Header({ onAir, onMini, sideOpen, onToggleSide }: Props) {
   return (
     <header className="header" data-tauri-drag-region>
       <div className="logo" data-tauri-drag-region>
-        <span className="logo__wow">WOW</span>CCM
-        <small>PLAYER</small>
+        <img src="/wowccm-logo.jpg" alt="WOWCCM" className="logo__img" data-tauri-drag-region />
+        <small data-tauri-drag-region>PLAYER</small>
       </div>
       <div className="header__right" data-tauri-drag-region>
         <span className={`live ${onAir ? "" : "live--off"}`}>● LIVE</span>

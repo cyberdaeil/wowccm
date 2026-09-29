@@ -30,7 +30,10 @@ input { font: inherit; color: inherit; }
 .app { display: flex; flex-direction: column; height: 100%; }
 /* 왼쪽: 플레이어(폭 고정) / 오른쪽: 사연·다시듣기·방송시간표 */
 .body { flex: 1; min-height: 0; display: flex; }
-.player-col { flex: 0 0 400px; width: 400px; min-height: 0; overflow-y: auto; overflow-x: hidden; background: #fff; }
+.player-col {
+  flex: 0 0 400px; width: 400px; min-height: 0; overflow-y: auto; overflow-x: hidden; background: #fff;
+  display: flex; flex-direction: column;
+}
 .side { flex: 1; min-width: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: #fff; }
 .side__body { flex: 1; min-height: 0; overflow-y: auto; }
 
@@ -40,9 +43,9 @@ input { font: inherit; color: inherit; }
   display: flex; align-items: center; justify-content: space-between;
   background: #fff; border-bottom: 1px solid var(--line);
 }
-.logo { display: flex; align-items: baseline; font-size: 19px; font-weight: 900; letter-spacing: -1px; color: #252529; }
-.logo__wow { color: var(--accent); margin-right: 2px; }
-.logo small { margin-left: 5px; font-size: 9px; font-weight: 800; letter-spacing: 0.2px; color: #aaa; }
+.logo { display: flex; align-items: flex-end; gap: 6px; }
+.logo__img { display: block; height: 24px; width: auto; }
+.logo small { font-size: 9px; font-weight: 800; letter-spacing: 0.2px; color: #aaa; line-height: 1; padding-bottom: 2px; }
 .header__right { display: flex; align-items: center; gap: 8px; }
 .live, .sidebtn { white-space: nowrap; flex-shrink: 0; }
 /* 오른쪽 창을 접은 좁은 화면에서는 로고 옆 PLAYER 글자를 숨긴다 */
@@ -134,7 +137,9 @@ input { font: inherit; color: inherit; }
 .controls__status { margin: 10px 0 0; text-align: center; font-size: 10px; color: #aaa; min-height: 14px; }
 
 /* 보이는 방송·선교후원·공지 */
-.extras { padding: 0 18px 16px; background: #fff; display: flex; flex-direction: column; gap: 8px; }
+.extras { flex: 1; padding: 0 18px 14px; background: #fff; display: flex; flex-direction: column; gap: 8px; }
+/* 남는 공간은 버튼과 공지 사이로 보내 공지를 창 맨 아래에 붙인다 */
+.extras .notice { margin-top: auto; }
 .extras__links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .linkbtn {
   display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px;
