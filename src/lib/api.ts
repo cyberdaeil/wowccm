@@ -20,6 +20,12 @@ export interface RecastItem {
   audio: string;
 }
 
+export interface Notice {
+  title: string;
+  link: string;
+  date: string; // MM-DD
+}
+
 export interface ScheduleItem {
   time: string;
   title: string;
@@ -142,4 +148,22 @@ export function parseMiniPage(html: string, now = new Date()) {
 
 export async function getMiniPage() {
   return parseMiniPage(await wowGet(API.miniPage));
+}
+
+/** 공지사항 RSS. 링크의 &amp;가 두 번 이스케이프되어 오므로 한 번 더 풀어 준다. */
+export function parseNotices(xml: string, limit = 5): Notice[] {
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
+  return [...doc.querySelectorAll("item")].slice(0, limit).map((it) => {
+    const date = clean(it.getElementsByTagName("dc:date")[0]?.textContent);
+    const m = /^\d{4}-(\d{2})-(\d{2})/.exec(date);
+    return {
+      title: clean(it.querySelector("title")?.textContent),
+      link: clean(it.querySelector("link")?.textContent).replace(/&amp;/g, "&"),
+      date: m ? `${m[1]}-${m[2]}` : "",
+    };
+  });
+}
+
+export async function getNotices(): Promise<Notice[]> {
+  return parseNotices(await wowGet(API.notices));
 }

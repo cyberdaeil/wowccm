@@ -7,7 +7,7 @@ use tauri::{
     AppHandle, Emitter, LogicalSize, Manager, WindowEvent,
 };
 
-const FULL_SIZE: (f64, f64) = (400.0, 780.0);
+const FULL_SIZE: (f64, f64) = (400.0, 840.0);
 const MINI_SIZE: (f64, f64) = (380.0, 72.0);
 
 #[tauri::command]

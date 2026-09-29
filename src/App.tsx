@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { REFRESH, STATION } from "./config";
-import { getDjImage, getMiniPage, getProgram, getRequests, getSong } from "./lib/api";
+import { getDjImage, getMiniPage, getNotices, getProgram, getRequests, getSong } from "./lib/api";
 import { usePlayer } from "./lib/usePlayer";
 import { usePolling } from "./lib/usePolling";
 import { useMediaSession } from "./lib/useMediaSession";
@@ -8,6 +8,7 @@ import { onTrayToggle, setMiniMode } from "./lib/tauri";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PlayerControls } from "./components/PlayerControls";
+import { StationExtras } from "./components/StationExtras";
 import { RequestPanel } from "./components/RequestPanel";
 import { RecastPanel } from "./components/RecastPanel";
 import { SchedulePanel } from "./components/SchedulePanel";
@@ -27,6 +28,7 @@ export default function App() {
   const song = usePolling(getSong, REFRESH.song);
   const requests = usePolling(getRequests, REFRESH.requests);
   const page = usePolling(getMiniPage, REFRESH.miniPage);
+  const notices = usePolling(getNotices, REFRESH.notices);
 
   const [tab, setTab] = useState<Tab>("request");
   const [mini, setMini] = useState(false);
@@ -101,6 +103,7 @@ export default function App() {
       <div className="scroll">
         <Hero image={dj.data ?? null} onAir={onAir} program={programName} song={song.data ?? null} />
         <PlayerControls status={player.status} onToggle={player.toggle} message={player.message} {...vol} />
+        <StationExtras notices={notices.data} />
 
         <nav className="tabs" role="tablist">
           {TABS.map((t) => (

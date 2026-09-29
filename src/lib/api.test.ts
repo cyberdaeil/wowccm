@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { kstMinutes, markOnAir, parseMiniPage, parseRequests } from "./api";
+import { kstMinutes, markOnAir, parseMiniPage, parseNotices, parseRequests } from "./api";
 
 // 한국 시각 2026-09-29 14:30 = UTC 05:30
 const KST_1430 = new Date("2026-09-29T05:30:00Z");
@@ -71,6 +71,24 @@ describe("parseMiniPage", () => {
     expect(r.schedule).toEqual([
       { time: "00:00", title: "자동방송", sub: "", onair: false },
       { time: "14:00", title: "리민의 음악노트", sub: "with 옹기장이", onair: true },
+    ]);
+  });
+});
+
+describe("parseNotices", () => {
+  it("공지 제목·링크·날짜를 읽고 이중 이스케이프된 링크를 푼다", () => {
+    const xml = `<?xml version="1.0" encoding="utf-8" ?>
+      <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel>
+      <item><title>와우씨씨엠 서버이전 안내</title>
+      <link>https://wowccm.net/bbs/board.php?bo_table=news&amp;amp;wr_id=3227</link>
+      <dc:date>2026-09-23T01:35:32+09:00</dc:date></item>
+      </channel></rss>`;
+    expect(parseNotices(xml)).toEqual([
+      {
+        title: "와우씨씨엠 서버이전 안내",
+        link: "https://wowccm.net/bbs/board.php?bo_table=news&wr_id=3227",
+        date: "09-23",
+      },
     ]);
   });
 });

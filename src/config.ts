@@ -13,9 +13,12 @@ export const API = {
   dj: "/wowcast/dj5.php?check=1", // {"icq","image"}
   requests: `${MINI}?mini_request_list=1`, // 사연 목록 HTML 조각
   miniPage: MINI, // 다시듣기·편성표가 이 페이지 안에 들어 있다
+  notices: "/bbs/rss.php?bo_table=news", // 공지사항 게시판 RSS
 };
 
 export const LINKS = {
+  visibleRadio: "https://www.youtube.com/c/wowccm/live", // 보이는 방송 (유튜브 라이브)
+  support: "https://wowccm.net/mission/", // 선교후원
   lyrics: "http://wowccm.iptime.org:8080/GetSongText.htm",
   recastAll: "https://wowccm.net/bbs/board.php?bo_table=recast",
   scheduleAll: "https://wowccm.net/bbs/board.php?bo_table=schedule_list&mode=l",
@@ -27,4 +30,5 @@ export const REFRESH = {
   program: 30_000,
   requests: 10_000,
   miniPage: 10 * 60_000,
+  notices: 30 * 60_000,
 };
