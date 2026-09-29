@@ -41,6 +41,12 @@ fn hide_to_tray(app: AppHandle) {
     }
 }
 
+/// 플레이어 완전히 끄기 (방송도 멈춤)
+#[tauri::command]
+fn quit_app(app: AppHandle) {
+    app.exit(0);
+}
+
 fn show_main(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.unminimize();
@@ -66,7 +72,8 @@ pub fn run() {
             wow_api::wow_post_request,
             youtube::youtube_live,
             set_window_mode,
-            hide_to_tray
+            hide_to_tray,
+            quit_app
         ])
         .setup(|app| {
             let toggle = MenuItem::with_id(app, "toggle", "재생 / 정지", true, None::<&str>)?;
@@ -103,9 +110,12 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             // Alt+F4, Cmd+W 등으로 닫아도 트레이로 숨김
+            // ⌘W, Alt+F4 등으로 닫을 때도 종료하지 않는다. 화면 쪽이 처음 한 번 안내한 뒤 트레이로 숨긴다.
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                let _ = window.hide();
+                if window.emit("close-requested", ()).is_err() {
+                    let _ = window.hide();
+                }
             }
         })
         .build(tauri::generate_context!())

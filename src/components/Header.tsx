@@ -1,4 +1,4 @@
-import { hideToTray, minimize } from "../lib/tauri";
+import { minimize } from "../lib/tauri";
 import { CloseIcon, MinusIcon, PanelIcon, ShrinkIcon } from "./Icons";
 
 interface Props {
@@ -6,9 +6,10 @@ interface Props {
   onMini: () => void;
   sideOpen: boolean;
   onToggleSide: () => void;
+  onClose: () => void;
 }
 
-export function Header({ onAir, onMini, sideOpen, onToggleSide }: Props) {
+export function Header({ onAir, onMini, sideOpen, onToggleSide, onClose }: Props) {
   return (
     <header className="header" data-tauri-drag-region>
       <div className="logo" data-tauri-drag-region>
@@ -32,7 +33,7 @@ export function Header({ onAir, onMini, sideOpen, onToggleSide }: Props) {
           <button className="winbtn" title="최소화" onClick={minimize}>
             <MinusIcon size={14} />
           </button>
-          <button className="winbtn" title="닫기 (트레이에서 계속 재생)" onClick={hideToTray}>
+          <button className="winbtn" title="닫기 (트레이에서 계속 재생)" onClick={onClose}>
             <CloseIcon size={14} />
           </button>
         </div>

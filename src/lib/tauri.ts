@@ -39,6 +39,19 @@ export function hideToTray() {
   if (isTauri) void invoke("hide_to_tray");
 }
 
+/** 플레이어 완전히 끄기 */
+export function quitApp() {
+  if (isTauri) void invoke("quit_app");
+}
+
+/** 창 닫기 요청(⌘W, Alt+F4, 창 테두리의 닫기)을 화면 쪽에서 처리한다 */
+export function onCloseRequested(cb: () => void): Promise<UnlistenFn> {
+  if (!isTauri) return Promise.resolve(() => {});
+  return listen("close-requested", cb);
+}
+
+export const isMac = /Mac/i.test(navigator.userAgent);
+
 export function minimize() {
   if (isTauri) void getCurrentWindow().minimize();
 }

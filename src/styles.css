@@ -289,3 +289,27 @@ input { font: inherit; color: inherit; }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: #e2e2e6; border-radius: 3px; }
+
+/* 안내 창 (처음 X를 누를 때) */
+.modal {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px;
+  background: rgba(20, 16, 24, 0.45); animation: modal-in 0.15s ease;
+}
+@keyframes modal-in { from { opacity: 0; } }
+.modal__box {
+  width: 100%; max-width: 360px; padding: 22px 22px 18px; border-radius: 14px; background: #fff;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25); text-align: left;
+}
+.modal__title { margin: 0 0 8px; font-size: 16px; font-weight: 800; letter-spacing: -0.4px; }
+.modal__text { margin: 0 0 14px; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.modal__tip {
+  padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); font-size: 12px; line-height: 1.7; color: #4a4a50;
+}
+.modal__tip b { color: var(--text); }
+.modal__btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.modal__btn {
+  height: 36px; padding: 0 16px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700;
+}
+.modal__btn:hover { background: var(--accent-deep); }
+.modal__btn--sub { background: #fff; color: var(--text-2); border: 1px solid #e1e1e6; }
+.modal__btn--sub:hover { background: #f6f6f7; }

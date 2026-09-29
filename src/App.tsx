@@ -15,7 +15,7 @@ import {
 import { usePlayer } from "./lib/usePlayer";
 import { usePolling } from "./lib/usePolling";
 import { useMediaSession } from "./lib/useMediaSession";
-import { onTrayToggle, openUrl, setWindowMode } from "./lib/tauri";
+import { hideToTray, onCloseRequested, onTrayToggle, openUrl, quitApp, setWindowMode } from "./lib/tauri";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PlayerControls } from "./components/PlayerControls";
@@ -25,9 +25,26 @@ import { RecastPanel } from "./components/RecastPanel";
 import { SchedulePanel } from "./components/SchedulePanel";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { UpdateBar } from "./components/UpdateBar";
+import { CloseNotice } from "./components/CloseNotice";
 import { useUpdater } from "./lib/useUpdater";
 
 type Tab = "request" | "recast" | "schedule";
+
+const CLOSE_NOTICE_KEY = "wowccm.closeNoticeSeen";
+function closeNoticeSeen(): boolean {
+  try {
+    return localStorage.getItem(CLOSE_NOTICE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function markCloseNoticeSeen() {
+  try {
+    localStorage.setItem(CLOSE_NOTICE_KEY, "1");
+  } catch {
+    /* 무시 */
+  }
+}
 
 const SIDE_KEY = "wowccm.side";
 function loadSideOpen(): boolean {
@@ -65,6 +82,7 @@ export default function App() {
   const [pinned, setPinned] = useState(true);
   const [sideOpen, setSideOpen] = useState(loadSideOpen);
   const updater = useUpdater();
+  const [closeNotice, setCloseNotice] = useState(false);
 
   // 켜자마자 방송 재생 (한 번만)
   const autoplayed = useRef(false);
@@ -159,6 +177,19 @@ export default function App() {
     setWindowMode(m ? "mini" : sideOpen ? "wide" : "player", pinned);
   };
 
+  // X 버튼·⌘W·Alt+F4: 처음 한 번은 "방송은 계속 나온다" 안내, 그다음부터는 바로 트레이로 숨김
+  const requestClose = () => {
+    if (closeNoticeSeen()) return hideToTray();
+    if (mini) goMini(false); // 미니 모드는 안내 창을 띄우기에 너무 작다
+    setCloseNotice(true);
+  };
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
+  useEffect(() => {
+    const un = onCloseRequested(() => requestCloseRef.current());
+    return () => void un.then((f) => f());
+  }, []);
+
   const vol = {
     volume: player.volume,
     onVolume: player.setVolume,
@@ -187,7 +218,26 @@ export default function App() {
 
   return (
     <div className={`app ${sideOpen ? "app--wide" : ""}`}>
-      <Header onAir={onAir} onMini={() => goMini(true)} sideOpen={sideOpen} onToggleSide={toggleSide} />
+      <Header
+        onAir={onAir}
+        onMini={() => goMini(true)}
+        sideOpen={sideOpen}
+        onToggleSide={toggleSide}
+        onClose={requestClose}
+      />
+      {closeNotice && (
+        <CloseNotice
+          onHide={() => {
+            markCloseNoticeSeen();
+            setCloseNotice(false);
+            hideToTray();
+          }}
+          onQuit={() => {
+            markCloseNoticeSeen();
+            quitApp();
+          }}
+        />
+      )}
       <UpdateBar state={updater.state} onInstall={() => void updater.install()} onDismiss={updater.dismiss} />
       <div className="body">
         <main className="player-col">
