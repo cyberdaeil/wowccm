@@ -1,12 +1,17 @@
 name: 설치 파일 빌드
 
-# v2.0.0 같은 태그를 푸시하거나, Actions 탭에서 직접 실행하면
+# v2.0.0 같은 태그를 푸시하거나, Actions 탭에서 직접 실행(태그 이름 입력)하면
 # Windows(.exe)와 Mac(.dmg) 설치 파일을 만들어 GitHub Releases에 올린다.
 # 태그에 "-"가 들어가면(예: v2.0.0-test1) 시험판(pre-release)으로 표시한다.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "만들 버전 태그 (예: v2.0.0-test1). 없으면 새로 만든다"
+        required: true
+        default: "v2.0.0-test1"
 
 permissions:
   contents: write
@@ -46,8 +51,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseName: "WOWCCM Player ${{ github.ref_name }}"
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          releaseName: "WOWCCM Player ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
           releaseBody: |
             ## 설치 방법
 
@@ -60,7 +65,7 @@ jobs:
             - **터미널**에서 `xattr -cr "/Applications/WOWCCM Player.app"` 을 한 번 실행한 뒤 다시 여세요.
             (Apple 개발자 서명 전이라 나오는 경고입니다)
           releaseDraft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(github.ref_type == 'tag' && github.ref_name || inputs.tag, '-') }}
           args: ${{ matrix.args }}
 
       # Releases 업로드가 실패해도 Actions 화면에서 받을 수 있도록 따로 보관
