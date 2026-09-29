@@ -72,6 +72,9 @@ jobs:
         run: |
           if [ -n "$APPLE_CERTIFICATE" ] && [ -n "$APPLE_SIGNING_IDENTITY" ]; then
             echo "Mac 앱에 서명합니다: $APPLE_SIGNING_IDENTITY"
+            # 서명 확인에 필요한 Apple Developer ID G2 중간 인증서 (이미 있으면 그대로 둔다)
+            curl -fsSL -o /tmp/DeveloperIDG2CA.cer https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer \
+              && sudo security add-certificates -k /Library/Keychains/System.keychain /tmp/DeveloperIDG2CA.cer || true
             {
               echo "APPLE_CERTIFICATE=$(printf '%s' "$APPLE_CERTIFICATE" | tr -d '\n\r ')"
               echo "APPLE_CERTIFICATE_PASSWORD=$APPLE_CERTIFICATE_PASSWORD"
