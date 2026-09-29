@@ -13,8 +13,8 @@ export async function wowGet(path: string): Promise<string> {
   return res.text();
 }
 
-export async function wowPostRequest(name: string, content: string): Promise<string> {
-  if (isTauri) return invoke<string>("wow_post_request", { name, content });
+export async function wowPostRequest(path: string, name: string, content: string): Promise<string> {
+  if (isTauri) return invoke<string>("wow_post_request", { path, name, content });
   throw new Error("브라우저 미리보기에서는 등록할 수 없습니다.");
 }
 

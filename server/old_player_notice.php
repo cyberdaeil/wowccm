@@ -19,7 +19,7 @@ if ($WOWCCM_SHOW_NEW_PLAYER_NOTICE): ?>
 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border:1px #E95017 solid;border-bottom:0;">
   <tr><td bgcolor="#E95017" align="center" height="17" valign="middle">
     <a href="<?php echo htmlspecialchars($WOWCCM_DOWNLOAD_URL, ENT_QUOTES); ?>" target="_blank" style="text-decoration:none;">
-      <font color="#ffffff"><b>★ 새 와우씨씨엠 플레이어 출시! 지금 받기 ▶</b></font>
+      <font color="#ffffff"><b>★ 새 플레이어 「WOWCCM 와플」 출시! 받기 ▶</b></font>
     </a>
   </td></tr>
 </table>

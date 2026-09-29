@@ -1,4 +1,4 @@
-import { API, STATION } from "../config";
+import { API, MINI_PAGES, STATION } from "../config";
 import { fetchIcyTitle, wowGet, wowPostRequest, youtubeLive, type YoutubeLive } from "./tauri";
 
 export interface ProgramInfo {
@@ -35,11 +35,34 @@ export interface ScheduleItem {
   onair: boolean;
 }
 
+/** 미니 페이지 코드 주소들(플레이어 전용 → 시험용) 중 처음으로 응답하는 곳을 쓴다 */
+async function miniGet(query: string, accept: (body: string) => boolean = () => true): Promise<string> {
+  let lastError: unknown = null;
+  for (const page of MINI_PAGES) {
+    try {
+      const body = await wowGet(page + query);
+      if (accept(body)) return body;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError ?? new Error("응답이 없습니다");
+}
+
+const isJson = (body: string) => {
+  try {
+    JSON.parse(body);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const parseHtml = (html: string) => new DOMParser().parseFromString(html, "text/html");
 const clean = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").trim();
 
 export async function getProgram(): Promise<ProgramInfo> {
-  const d = JSON.parse(await wowGet(API.program));
+  const d = JSON.parse(await miniGet(API.program, isJson));
   return { program: clean(d.program), presenter: clean(d.presenter), onair: Number(d.onair) === 1 };
 }
 
@@ -106,13 +129,25 @@ export async function getRequests(): Promise<RequestPost[]> {
   } catch {
     /* 파일이 아직 없음 → 기존 목록 */
   }
-  return parseRequests(await wowGet(API.requests));
+  return parseRequests(await miniGet(API.requests, (b) => b.includes("request-item") || b.trim() === ""));
 }
 
 export async function postRequest(name: string, content: string): Promise<{ ok: boolean; message: string }> {
   try {
-    const d = JSON.parse(await wowPostRequest(name, content));
-    return { ok: !!d.ok, message: d.message ?? "" };
+    // 플레이어 전용 파일에 먼저 보내고, 그 파일이 없을 때(오류·JSON 아님)만 시험용 페이지로 보낸다.
+    // 등록이 거절된 경우(ok:false)는 다른 곳에 다시 보내지 않는다 (두 번 올라가지 않게).
+    let lastError: unknown = null;
+    for (const page of MINI_PAGES) {
+      try {
+        const body = await wowPostRequest(page, name, content);
+        if (!isJson(body)) continue;
+        const d = JSON.parse(body);
+        return { ok: !!d.ok, message: d.message ?? "" };
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError ?? new Error("등록 결과를 확인하지 못했습니다.");
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : "등록 결과를 확인하지 못했습니다." };
   }
@@ -179,7 +214,7 @@ export function parseMiniPage(html: string, now = new Date()) {
 }
 
 export async function getMiniPage() {
-  return parseMiniPage(await wowGet(API.miniPage));
+  return parseMiniPage(await miniGet(API.miniPage, (b) => b.includes("scheduleTemplate") || b.includes("recastTemplate")));
 }
 
 /** 공지사항 RSS. 링크의 &amp;가 두 번 이스케이프되어 오므로 한 번 더 풀어 준다. */

@@ -5,8 +5,9 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 const BASE: &str = "https://wowccm.net";
-/// 사연 등록을 받는 주소 (미니 페이지와 같은 곳)
-const REQUEST_WRITE_PATH: &str = "/wowcast/wow_mini_test_v2.php";
+/// 사연 등록을 받을 수 있는 주소. 플레이어 전용 복사본(wapl_api.php)을 먼저 쓰고,
+/// 아직 없으면 예전 미니 페이지로 보낸다.
+const REQUEST_WRITE_PATHS: [&str; 2] = ["/wowcast/wapl_api.php", "/wowcast/wow_mini_test_v2.php"];
 
 fn client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
@@ -47,9 +48,12 @@ pub async fn wow_get(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn wow_post_request(name: String, content: String) -> Result<String, String> {
+pub async fn wow_post_request(path: String, name: String, content: String) -> Result<String, String> {
+    if !REQUEST_WRITE_PATHS.contains(&path.as_str()) {
+        return Err("허용되지 않은 주소입니다".into());
+    }
     let res = client()
-        .post(url_for(REQUEST_WRITE_PATH)?)
+        .post(url_for(&path)?)
         .form(&[
             ("mini_request_action", "write"),
             ("wr_name", name.trim()),

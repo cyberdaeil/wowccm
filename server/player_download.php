@@ -9,8 +9,7 @@
  */
 
 const WOWCCM_REPO = 'cyberdaeil/wowccm';
-// 정식판(v2.0.0)이 나오기 전까지는 시험판도 보여 준다. 정식판을 올린 뒤 false로 바꾼다.
-const WOWCCM_INCLUDE_PRERELEASE = true;
+// 정식판이 있으면 정식판을, 아직 정식판이 하나도 없을 때만 시험판을 보여 준다. (따로 바꿀 것 없음)
 const WOWCCM_RELEASE_CACHE_TTL = 600;
 
 function wowccm_http_get_json(string $url): ?array
@@ -46,19 +45,26 @@ function wowccm_latest_release(): array
     if (is_array($cached) && ($cached['expires'] ?? 0) > time()) return $cached['data'];
 
     $info = ['version' => '', 'windows' => '', 'mac' => '', 'page' => 'https://github.com/' . WOWCCM_REPO . '/releases'];
-    $releases = wowccm_http_get_json('https://api.github.com/repos/' . WOWCCM_REPO . '/releases?per_page=10');
-    foreach ($releases ?? [] as $r) {
-        if (!empty($r['draft'])) continue;
-        if (!empty($r['prerelease']) && !WOWCCM_INCLUDE_PRERELEASE) continue;
-        foreach ($r['assets'] ?? [] as $a) {
-            $name = $a['name'] ?? '';
-            if (!$info['windows'] && preg_match('/_x64-setup\.exe$/', $name)) $info['windows'] = $a['browser_download_url'];
-            if (!$info['mac'] && preg_match('/\.dmg$/', $name)) $info['mac'] = $a['browser_download_url'];
-        }
-        if ($info['windows'] || $info['mac']) {
-            $info['version'] = $r['tag_name'] ?? '';
-            $info['page'] = $r['html_url'] ?? $info['page'];
-            break;
+    $releases = wowccm_http_get_json('https://api.github.com/repos/' . WOWCCM_REPO . '/releases?per_page=20') ?? [];
+    foreach ([false, true] as $allowPrerelease) {
+        foreach ($releases as $r) {
+            if (!empty($r['draft'])) continue;
+            if (!empty($r['prerelease']) && !$allowPrerelease) continue;
+            $win = $mac = '';
+            foreach ($r['assets'] ?? [] as $a) {
+                $name = $a['name'] ?? '';
+                if (!$win && preg_match('/_x64-setup\.exe$/', $name)) $win = $a['browser_download_url'];
+                if (!$mac && preg_match('/\.dmg$/', $name)) $mac = $a['browser_download_url'];
+            }
+            if ($win || $mac) {
+                $info = [
+                    'version' => $r['tag_name'] ?? '',
+                    'windows' => $win,
+                    'mac' => $mac,
+                    'page' => $r['html_url'] ?? $info['page'],
+                ];
+                break 2;
+            }
         }
     }
     // 가져오지 못했으면 오래 저장하지 않는다
@@ -79,7 +85,7 @@ header('Content-Type: text/html; charset=utf-8');
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>와우씨씨엠 플레이어 다운로드</title>
+<title>WOWCCM 와플 다운로드</title>
 <style>
   body { margin: 0; background: #f5f5f6; color: #202024; font-family: -apple-system, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif; }
   .wrap { max-width: 560px; margin: 0 auto; padding: 48px 20px; text-align: center; }
@@ -119,7 +125,8 @@ header('Content-Type: text/html; charset=utf-8');
 <div class="wrap">
   <div class="card">
     <img class="logo" src="/image/main/wowccm_logo.jpg" alt="WOWCCM">
-    <h1>새 와우씨씨엠 플레이어</h1>
+    <h1>WOWCCM 와플</h1>
+    <p class="ver" style="margin:-4px 0 14px">새 와우씨씨엠 플레이어 · 와우플레이어를 줄여 “와플”</p>
     <p class="lead">24시간 찬양방송을 더 편하게 들으세요.<br>보이는 라디오, 사연&amp;신청곡, 다시듣기, 방송시간표를 한 화면에서.</p>
 
 <?php
