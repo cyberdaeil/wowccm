@@ -68,7 +68,7 @@
 | 다시듣기·편성표 | `/wowcast/wow_mini_test_v2.php` 페이지 안의 `<template>` | HTML |
 | 공지 | `/bbs/rss.php?bo_table=news` | RSS |
 | 보이는 방송 여부 | `/wowcast/youtube_live.php` (YouTube API, 서버에 설치 필요) | JSON |
-| 〃 (대체) | `https://www.youtube.com/c/wowccm/live` (`src-tauri/src/youtube.rs`) | 유튜브 페이지 |
+| 〃 (대체) | `https://www.youtube.com/@wowccm/live` (`src-tauri/src/youtube.rs`) | 유튜브 페이지 |
 
 > 지금은 **시험용 페이지(`wow_mini_test_v2.php`)** 에 기대고 있습니다. 이 페이지의 이름이나 구조가 바뀌면 앱도 함께 고쳐야 합니다.
 > 플레이어 전용 JSON 주소(예: `/wowcast/player_api.php`)를 하나 만들어 두면 훨씬 안전합니다.

@@ -5,7 +5,7 @@
 use serde::Serialize;
 use std::time::Duration;
 
-const CHANNEL_LIVE_URL: &str = "https://www.youtube.com/c/wowccm/live";
+const CHANNEL_LIVE_URL: &str = "https://www.youtube.com/@wowccm/live";
 
 #[derive(Serialize, Debug, PartialEq)]
 pub struct LiveStatus {
