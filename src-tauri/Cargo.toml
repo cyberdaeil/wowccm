@@ -1,7 +1,7 @@
 [package]
 name = "wowccm-player"
 version = "2.0.0"
-description = "WOWCCM 24시간 찬양방송 플레이어"
+description = "WOWCCM 와플 - 24시간 찬양방송 플레이어"
 authors = ["WOWCCM"]
 edition = "2021"
 
@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-single-instance = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-updater = "2"

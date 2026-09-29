@@ -1,4 +1,4 @@
-# WOWCCM Player 2.0
+# WOWCCM 와플 (WOWCCM Wapl)
 
 와우씨씨엠 24시간 찬양방송 데스크톱 플레이어입니다.
 하나의 코드에서 **Windows 설치 파일(.exe)** 과 **Mac 설치 파일(.dmg)** 을 함께 만듭니다.
@@ -134,7 +134,7 @@ src-tauri/            데스크톱 앱 (Rust)
   src/lib.rs          트레이, 미니 모드, 창 닫기 처리
   src/wow_api.rs      wowccm.net 데이터 요청 (CORS 우회)
   src/now_playing.rs  곡 정보 서버가 안 될 때 스트림에서 곡 정보(ICY) 읽기
-app-icon.svg          앱 아이콘 원본 (npm run icons 로 모든 크기 생성)
+branding/             와플 아이콘 원본 그림 (npm run icons 로 모든 크기 생성, scripts/make_icons.py)
 ```
 
 ## Mac 서명·공증 (Apple 개발자 계정)

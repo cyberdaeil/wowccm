@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "tauri": "tauri",
-    "icons": "tauri icon app-icon.svg",
+    "icons": "python3 scripts/make_icons.py",
     "test": "vitest run"
   },
   "dependencies": {

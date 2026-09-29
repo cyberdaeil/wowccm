@@ -77,14 +77,15 @@ pub fn run() {
         ])
         .setup(|app| {
             let toggle = MenuItem::with_id(app, "toggle", "재생 / 정지", true, None::<&str>)?;
-            let show = MenuItem::with_id(app, "show", "플레이어 열기", true, None::<&str>)?;
+            let show = MenuItem::with_id(app, "show", "와플 열기", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "종료", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let menu = Menu::with_items(app, &[&toggle, &show, &sep, &quit])?;
 
             TrayIconBuilder::with_id("main-tray")
-                .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("WOWCCM 24시간 찬양방송")
+                // 작은 크기에서도 와플이 잘 보이도록 확대한 그림을 쓴다
+                .icon(tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))?)
+                .tooltip("WOWCCM 와플")
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {

@@ -102,14 +102,16 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
-          releaseName: "WOWCCM Player ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          releaseName: "WOWCCM 와플 ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          # 설치 파일 이름은 영문으로 (GitHub 다운로드 주소에서 한글이 깨지지 않도록)
+          assetNamePattern: "WOWCCM.Wapl_[version]_[arch][_setup][ext]"
           releaseBody: |
             ## 설치 방법
 
-            **Windows**: `WOWCCM.Player_…_x64-setup.exe`를 받아 실행하세요.
+            **Windows**: `WOWCCM.Wapl_…_x64-setup.exe`를 받아 실행하세요.
             "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누릅니다. (코드 서명 전이라 나오는 경고입니다)
 
-            **Mac**: `WOWCCM.Player_…_universal.dmg`를 받아 열고, 앱을 **응용 프로그램** 폴더로 끌어 놓으세요.
+            **Mac**: `WOWCCM.Wapl_…_universal.dmg`를 받아 열고, 앱을 **응용 프로그램** 폴더로 끌어 놓으세요.
             (Apple 서명·공증을 받은 앱이라 경고 없이 열립니다)
           releaseDraft: false
           prerelease: ${{ contains(github.ref_type == 'tag' && github.ref_name || inputs.tag, '-') }}
@@ -118,7 +120,7 @@ jobs:
       # Releases 업로드가 실패해도 Actions 화면에서 받을 수 있도록 따로 보관
       - uses: actions/upload-artifact@v4
         with:
-          name: wowccm-player-${{ matrix.platform }}
+          name: wowccm-wapl-${{ matrix.platform }}
           path: |
             src-tauri/target/**/release/bundle/nsis/*.exe
             src-tauri/target/**/release/bundle/dmg/*.dmg
