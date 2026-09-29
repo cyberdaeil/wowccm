@@ -2,12 +2,25 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-// 브라우저(npm run dev)에서 열어도 화면 작업을 할 수 있도록 Tauri가 없으면 조용히 넘어간다.
+// 브라우저(npm run dev)에서 열어도 화면 작업을 할 수 있도록 Tauri가 없으면 대신 동작한다.
 export const isTauri = "__TAURI_INTERNALS__" in window;
 
-export async function fetchNowPlaying(url: string): Promise<string | null> {
-  // 브라우저 미리보기에서 ?demo 를 붙이면 예시 곡을 보여준다
-  if (!isTauri) return location.search.includes("demo") ? "Companion - WELOVE" : null;
+/** wowccm.net 경로(/로 시작)를 GET. 앱에서는 Rust가, 브라우저 개발 모드에서는 Vite 프록시가 대신 요청한다. */
+export async function wowGet(path: string): Promise<string> {
+  if (isTauri) return invoke<string>("wow_get", { path });
+  const res = await fetch(`/wowproxy${path}`);
+  if (!res.ok) throw new Error(String(res.status));
+  return res.text();
+}
+
+export async function wowPostRequest(name: string, content: string): Promise<string> {
+  if (isTauri) return invoke<string>("wow_post_request", { name, content });
+  throw new Error("브라우저 미리보기에서는 등록할 수 없습니다.");
+}
+
+/** 곡 정보 서버가 응답하지 않을 때 스트림 자체의 곡 정보(ICY)로 대신한다. */
+export async function fetchIcyTitle(url: string): Promise<string | null> {
+  if (!isTauri) return null;
   try {
     return await invoke<string | null>("now_playing", { url });
   } catch {
@@ -30,14 +43,6 @@ export function minimize() {
 export function onTrayToggle(cb: () => void): Promise<UnlistenFn> {
   if (!isTauri) return Promise.resolve(() => {});
   return listen("tray-toggle", cb);
-}
-
-/** "제목 - 아티스트" 또는 "아티스트 - 제목" 형태를 나눈다. 송출 프로그램 형식을 확인한 뒤 순서를 맞출 것. */
-export function splitTitle(raw: string | null): { title: string; artist: string } | null {
-  if (!raw) return null;
-  const i = raw.indexOf(" - ");
-  if (i < 0) return { title: raw, artist: "" };
-  return { title: raw.slice(0, i).trim(), artist: raw.slice(i + 3).trim() };
 }
 
 /** 외부 링크는 기본 브라우저로 연다. */

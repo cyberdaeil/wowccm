@@ -1,20 +1,30 @@
-// 방송국 정보. 링크와 데이터 주소가 정해지면 여기만 고치면 된다.
+// 방송국 설정. 서버 주소가 바뀌면 여기만 고치면 된다.
 export const STATION = {
   name: "WOWCCM",
-  slogan: "24시간 찬양방송 와우씨씨엠",
   streamUrl: "https://live.wowccm.net/live.mp3",
-  // 곡 정보 갱신 주기(ms)
-  nowPlayingInterval: 15_000,
+  site: "https://wowccm.net",
 };
 
-// 빈 문자열이면 버튼이 "준비 중"으로 표시된다.
+// wowccm.net 데이터 주소 (현재 미니 페이지 wow_mini_test_v2.php와 같은 곳을 쓴다)
+const MINI = "/wowcast/wow_mini_test_v2.php";
+export const API = {
+  program: `${MINI}?mini_program_status=1`, // {"program","presenter","onair"}
+  song: "/daeil/music5.php?song_check=1", // {"status","song"}
+  dj: "/wowcast/dj5.php?check=1", // {"icq","image"}
+  requests: `${MINI}?mini_request_list=1`, // 사연 목록 HTML 조각
+  miniPage: MINI, // 다시듣기·편성표가 이 페이지 안에 들어 있다
+};
+
 export const LINKS = {
-  visibleRadio: "", // 보이는 방송
-  chat: "", // 대화방
-  support: "", // 선교후원
+  lyrics: "http://wowccm.iptime.org:8080/GetSongText.htm",
+  recastAll: "https://wowccm.net/bbs/board.php?bo_table=recast",
+  scheduleAll: "https://wowccm.net/bbs/board.php?bo_table=schedule_list&mode=l",
 };
 
-export const NOTICES: { text: string; url?: string }[] = [
-  { text: "와우씨씨엠 새 플레이어 2.0 시험판입니다." },
-  { text: "와우씨씨엠 각종 영상을 유튜브에서 가장 먼저 만나세요." },
-];
+// 갱신 주기 (ms)
+export const REFRESH = {
+  song: 10_000,
+  program: 30_000,
+  requests: 10_000,
+  miniPage: 10 * 60_000,
+};

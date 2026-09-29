@@ -3,37 +3,43 @@
 와우씨씨엠 24시간 찬양방송 데스크톱 플레이어입니다.
 하나의 코드에서 **Windows 설치 파일(.exe)** 과 **Mac 설치 파일(.dmg)** 을 함께 만듭니다.
 
-| 기본 화면 | 다크 모드 |
-|---|---|
-| ![기본](docs/full-light.png) | ![다크](docs/full-dark.png) |
+디자인은 와우씨씨엠 미니 페이지(`wowcast/wow_mini_test_v2.php`)의 분위기를 따릅니다.
+
+| 사연&신청곡 | 다시듣기 | 방송시간표 |
+|---|---|---|
+| ![사연](docs/full-request.png) | ![다시듣기](docs/full-recast.png) | ![편성표](docs/full-schedule.png) |
 
 미니 모드:
 
 ![미니](docs/mini.png)
 
-## 지금 되는 것 (1단계)
+## 기능
 
-- 실시간 방송 재생·정지, 볼륨, 음소거. 볼륨은 다음에 켤 때도 기억합니다.
-- 정지했다가 다시 재생하면 **지금 나오는 방송부터** 이어집니다.
-- 연결이 끊기면 자동으로 다시 연결합니다. 간격은 1초에서 시작해 최대 30초까지 늘어납니다.
-- 현재 곡 정보 표시. 스트림의 ICY 메타데이터를 읽으며, UTF-8과 EUC-KR 인코딩을 모두 지원합니다.
-- 최근에 흐른 곡 목록 (최대 30곡)
-- 미니 모드와 "항상 위에 표시"
-- 닫기(✕)를 눌러도 트레이/메뉴바에서 계속 재생됩니다. 트레이 메뉴에는 재생/정지, 열기, 종료가 있습니다.
-- 키보드 미디어 키, 스페이스바로 재생/정지
-- 시스템 설정에 맞춰 다크 모드가 자동 적용됩니다.
-- 프로그램이 이미 실행 중이면 새로 켜지 않고 기존 창을 보여줍니다.
+- **생방송 재생.** 정지 후 다시 누르면 지금 나오는 방송부터 이어집니다. 끊기면 자동으로 다시 연결합니다.
+- **진행자 이미지·프로그램명·현재 곡** 자동 갱신. 곡명이 칸보다 길면 흘러갑니다. [가사보기] 링크도 있습니다.
+- **사연&신청곡.** 목록 보기와 글 등록을 지원하고, 이름은 기억해 둡니다.
+- **다시듣기.** 누르면 생방송이 멈추고 다시듣기가 재생됩니다. 같은 회차를 다시 누르면 일시정지되고, 한 번 더 누르면 이어 듣습니다.
+- **방송시간표.** 지금 방송 중인 프로그램을 ON AIR로 표시합니다. 해외에서도 **한국 시각** 기준으로 판단합니다.
+- **미니 모드**와 "항상 위에 표시"
+- **트레이 상주.** 닫기(✕)를 눌러도 트레이/메뉴바에서 계속 재생됩니다.
+- 키보드 미디어 키와 스페이스바로 재생/정지
+- 볼륨은 다음에 켤 때도 기억합니다. 프로그램을 두 번 실행하면 기존 창을 보여줍니다.
 
-## 연동을 기다리는 것
+## 서버 데이터
 
-`src/config.ts`에 주소를 넣으면 바로 동작하거나, 데이터 형식이 정해지면 붙일 부분입니다.
+모든 주소는 `src/config.ts`에 모여 있습니다. wowccm.net이 CORS 헤더를 주지 않아서, 앱에서는 Rust 쪽(`src-tauri/src/wow_api.rs`)이 대신 요청합니다. 요청은 wowccm.net 경로로만 제한됩니다.
 
-- [ ] 보이는 방송 / 대화방 / 선교후원 링크 → `LINKS`
-- [ ] 공지 문구 → `NOTICES` (나중에 서버에서 불러오도록 변경 예정)
-- [ ] 사연·신청곡 게시판 (조회·등록 방식 확인 필요)
-- [ ] 편성표, 현재 프로그램 정보
-- [ ] 배너 슬라이드 (유튜브 등)
-- [ ] 취침 예약·알람, 자동 실행, 자동 업데이트
+| 데이터 | 주소 | 형식 |
+|---|---|---|
+| 프로그램명 | `/wowcast/wow_mini_test_v2.php?mini_program_status=1` | JSON |
+| 현재 곡 | `/daeil/music5.php?song_check=1` | JSON |
+| 진행자 이미지 | `/wowcast/dj5.php?check=1` | JSON |
+| 사연 목록 | `/wowcast/wow_mini_test_v2.php?mini_request_list=1` | HTML 조각 |
+| 사연 등록 | `POST /wowcast/wow_mini_test_v2.php` | JSON |
+| 다시듣기·편성표 | `/wowcast/wow_mini_test_v2.php` 페이지 안의 `<template>` | HTML |
+
+> 지금은 **시험용 페이지(`wow_mini_test_v2.php`)** 에 기대고 있습니다. 이 페이지의 이름이나 구조가 바뀌면 앱도 함께 고쳐야 합니다.
+> 플레이어 전용 JSON 주소(예: `/wowcast/player_api.php`)를 하나 만들어 두면 훨씬 안전합니다.
 
 ## 개발
 
@@ -43,7 +49,8 @@ Linux에서는 [Tauri 사전 준비](https://v2.tauri.app/start/prerequisites/)�
 ```bash
 npm install
 npm run tauri dev      # 앱 창으로 실행
-npm run dev            # 브라우저에서 화면만 확인 (http://localhost:1420/?demo)
+npm run dev            # 브라우저에서 화면만 확인 (http://localhost:1420)
+npm test               # 화면 쪽 테스트 (사연·편성표 해석, ON AIR 판단)
 cd src-tauri && cargo test
 ```
 
@@ -71,11 +78,12 @@ git push origin v2.0.0
 ```
 src/                  화면 (React + TypeScript)
   config.ts           스트림 주소, 링크, 공지
-  lib/useRadio.ts     재생, 자동 재연결
-  lib/useNowPlaying.ts 곡 정보 갱신, 최근 곡
+  lib/usePlayer.ts    생방송·다시듣기 재생, 자동 재연결
+  lib/api.ts          서버 데이터 읽기와 해석
   components/         화면 조각들
 src-tauri/            데스크톱 앱 (Rust)
   src/lib.rs          트레이, 미니 모드, 창 닫기 처리
-  src/now_playing.rs  스트림에서 곡 정보(ICY) 읽기
+  src/wow_api.rs      wowccm.net 데이터 요청 (CORS 우회)
+  src/now_playing.rs  곡 정보 서버가 안 될 때 스트림에서 곡 정보(ICY) 읽기
 app-icon.svg          앱 아이콘 원본 (npm run icons 로 모든 크기 생성)
 ```

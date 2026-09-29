@@ -1,4 +1,5 @@
 mod now_playing;
+mod wow_api;
 
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
@@ -6,7 +7,7 @@ use tauri::{
     AppHandle, Emitter, LogicalSize, Manager, WindowEvent,
 };
 
-const FULL_SIZE: (f64, f64) = (400.0, 720.0);
+const FULL_SIZE: (f64, f64) = (400.0, 780.0);
 const MINI_SIZE: (f64, f64) = (380.0, 72.0);
 
 #[tauri::command]
@@ -51,6 +52,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             now_playing,
+            wow_api::wow_get,
+            wow_api::wow_post_request,
             set_mini_mode,
             hide_to_tray
         ])

@@ -1,38 +1,55 @@
 import { useEffect, useState } from "react";
-import { STATION } from "./config";
-import { useRadio } from "./lib/useRadio";
-import { useNowPlaying } from "./lib/useNowPlaying";
+import { REFRESH, STATION } from "./config";
+import { getDjImage, getMiniPage, getProgram, getRequests, getSong } from "./lib/api";
+import { usePlayer } from "./lib/usePlayer";
+import { usePolling } from "./lib/usePolling";
 import { useMediaSession } from "./lib/useMediaSession";
-import { onTrayToggle, setMiniMode, splitTitle } from "./lib/tauri";
-import { TitleBar } from "./components/TitleBar";
-import { ProgramCard } from "./components/ProgramCard";
-import { NowPlaying } from "./components/NowPlaying";
-import { Controls } from "./components/Controls";
-import { QuickLinks } from "./components/QuickLinks";
-import { NoticeTicker } from "./components/NoticeTicker";
-import { Tabs } from "./components/Tabs";
+import { onTrayToggle, setMiniMode } from "./lib/tauri";
+import { Header } from "./components/Header";
+import { Hero } from "./components/Hero";
+import { PlayerControls } from "./components/PlayerControls";
+import { RequestPanel } from "./components/RequestPanel";
+import { RecastPanel } from "./components/RecastPanel";
+import { SchedulePanel } from "./components/SchedulePanel";
 import { MiniPlayer } from "./components/MiniPlayer";
 
+type Tab = "request" | "recast" | "schedule";
+const TABS: { key: Tab; label: string }[] = [
+  { key: "request", label: "사연&신청곡" },
+  { key: "recast", label: "다시듣기" },
+  { key: "schedule", label: "방송시간표" },
+];
+
 export default function App() {
-  const radio = useRadio(STATION.streamUrl);
-  const { current, history } = useNowPlaying(STATION.streamUrl, STATION.nowPlayingInterval);
-  const track = splitTitle(current);
+  const player = usePlayer(STATION.streamUrl);
+  const program = usePolling(getProgram, REFRESH.program);
+  const dj = usePolling(getDjImage, REFRESH.program);
+  const song = usePolling(getSong, REFRESH.song);
+  const requests = usePolling(getRequests, REFRESH.requests);
+  const page = usePolling(getMiniPage, REFRESH.miniPage);
+
+  const [tab, setTab] = useState<Tab>("request");
   const [mini, setMini] = useState(false);
   const [pinned, setPinned] = useState(true);
 
+  const programName = program.data?.program ?? "";
+  const onAir = program.data?.onair ?? false;
+  const songText = song.data ?? "";
+
   useMediaSession(
-    track?.title ?? STATION.slogan,
-    track?.artist ?? "WOWCCM",
-    radio.playing,
-    radio.play,
-    radio.stop,
+    programName || "WOWCCM LIVE",
+    songText || "WOWCCM",
+    dj.data ?? null,
+    player.playing,
+    player.play,
+    player.stop,
   );
 
   // 트레이 메뉴 "재생 / 정지"
   useEffect(() => {
-    const un = onTrayToggle(radio.toggle);
+    const un = onTrayToggle(player.toggle);
     return () => void un.then((f) => f());
-  }, [radio.toggle]);
+  }, [player.toggle]);
 
   // 스페이스바로 재생/정지 (입력창 밖에서만)
   useEffect(() => {
@@ -41,32 +58,33 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
       e.preventDefault();
-      radio.toggle();
+      player.toggle();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [radio.toggle]);
+  }, [player.toggle]);
 
   const goMini = (m: boolean) => {
     setMini(m);
     setMiniMode(m, pinned);
   };
 
-  const volumeProps = {
-    volume: radio.volume,
-    onVolume: radio.setVolume,
-    muted: radio.muted,
-    onMute: radio.toggleMute,
+  const vol = {
+    volume: player.volume,
+    onVolume: player.setVolume,
+    muted: player.muted,
+    onMute: player.toggleMute,
   };
 
   if (mini) {
     return (
       <MiniPlayer
-        title={track?.title ?? STATION.slogan}
-        artist={track?.artist ?? ""}
-        status={radio.status}
-        onToggle={radio.toggle}
-        {...volumeProps}
+        image={dj.data ?? null}
+        program={programName || "WOWCCM"}
+        song={songText || "24시간 찬양방송"}
+        status={player.status}
+        onToggle={player.toggle}
+        {...vol}
         pinned={pinned}
         onPin={() => {
           setPinned(!pinned);
@@ -79,19 +97,38 @@ export default function App() {
 
   return (
     <div className="app">
-      <TitleBar onMini={() => goMini(true)} />
-      <main className="main">
-        <ProgramCard onAir={radio.status === "playing"} />
-        <NowPlaying
-          title={track?.title ?? null}
-          artist={track?.artist ?? ""}
-          playing={radio.status === "playing"}
-        />
-        <Controls status={radio.status} onToggle={radio.toggle} {...volumeProps} />
-        <QuickLinks />
-      </main>
-      <NoticeTicker />
-      <Tabs history={history} />
+      <Header onAir={onAir} onMini={() => goMini(true)} />
+      <div className="scroll">
+        <Hero image={dj.data ?? null} onAir={onAir} program={programName} song={song.data ?? null} />
+        <PlayerControls status={player.status} onToggle={player.toggle} message={player.message} {...vol} />
+
+        <nav className="tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
+              className={`tab ${tab === t.key ? "is-active" : ""}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        {tab === "request" && (
+          <RequestPanel posts={requests.data} error={requests.error} onPosted={requests.refresh} />
+        )}
+        {tab === "recast" && (
+          <RecastPanel
+            items={page.data?.recasts ?? (page.error ? [] : null)}
+            currentUrl={player.recastUrl}
+            playing={player.recastPlaying}
+            onToggle={player.toggleRecast}
+          />
+        )}
+        {tab === "schedule" && <SchedulePanel items={page.data?.schedule ?? (page.error ? [] : null)} />}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 export function useMediaSession(
   title: string,
   artist: string,
+  artwork: string | null,
   playing: boolean,
   play: () => void,
   stop: () => void,
@@ -13,9 +14,10 @@ export function useMediaSession(
     navigator.mediaSession.metadata = new MediaMetadata({
       title,
       artist,
-      album: "WOWCCM 24시간 찬양방송",
+      album: "WOWCCM",
+      artwork: artwork ? [{ src: artwork, sizes: "512x512" }] : [],
     });
-  }, [title, artist]);
+  }, [title, artist, artwork]);
 
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
