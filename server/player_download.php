@@ -95,6 +95,24 @@ header('Content-Type: text/html; charset=utf-8');
   .help { text-align: left; margin-top: 26px; padding-top: 20px; border-top: 1px solid #ededf0; font-size: 13px; line-height: 1.7; color: #555; }
   .help b { color: #202024; }
   code { background: #f3f3f5; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
+  /* Windows 설치 안내: 실제 "Windows의 PC 보호" 창을 흉내 낸 그림 */
+  .guide { text-align: left; margin-top: 26px; padding-top: 22px; border-top: 1px solid #ededf0; }
+  .guide h2 { font-size: 16px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .guide .sub { font-size: 13px; color: #6b6b72; margin: 0 0 16px; line-height: 1.6; }
+  .step { margin: 0 0 18px; }
+  .step-title { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+  .step-title span { display: inline-block; width: 22px; height: 22px; line-height: 22px; border-radius: 50%; background: #E95017; color: #fff; text-align: center; font-size: 12px; margin-right: 6px; }
+  .ss { background: #0f5ea8; color: #fff; border-radius: 6px; padding: 18px 18px 14px; font-family: "Segoe UI", "Malgun Gothic", sans-serif; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .ss-title { font-size: 19px; font-weight: 300; margin: 0 0 10px; }
+  .ss-text { font-size: 12px; line-height: 1.6; opacity: .95; margin: 0 0 10px; }
+  .ss-meta { font-size: 12px; line-height: 1.8; margin: 0 0 12px; }
+  .ss-link { font-size: 12px; text-decoration: underline; display: inline-block; padding: 2px 4px; }
+  .ss-btns { text-align: right; margin-top: 12px; }
+  .ss-btn { display: inline-block; min-width: 70px; padding: 6px 12px; margin-left: 6px; border: 1px solid #fff; font-size: 12px; text-align: center; }
+  .ss-btn.dim { opacity: .55; }
+  .hl { outline: 3px solid #ffd54a; outline-offset: 2px; border-radius: 3px; position: relative; }
+  .hl-tag { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; background: #ffd54a; color: #3a2c00; font-size: 11px; font-weight: 700; text-decoration: none; }
+  .note { font-size: 12px; color: #6b6b72; line-height: 1.7; background: #f7f7f8; border-radius: 10px; padding: 12px 14px; }
 </style>
 </head>
 <body>
@@ -117,13 +135,40 @@ if (!$win && !$mac) {
 ?>
     <?php if ($rel['version']): ?><div class="ver">버전 <?= h($rel['version']) ?></div><?php endif; ?>
 
-    <div class="help">
-      <b>Windows</b><br>
-      받은 파일을 실행하세요. "Windows의 PC 보호" 창이 뜨면 <b>추가 정보 → 실행</b>을 누릅니다.<br>
-      이전 와우씨씨엠 플레이어가 있으면 설치 중에 삭제할지 물어봅니다.<br><br>
-      <b>Mac</b><br>
-      받은 파일을 열고 앱을 <b>응용 프로그램</b> 폴더로 끌어 놓으세요.<br>
-      Apple의 확인(공증)을 받은 앱이라 바로 열립니다.
+    <div class="guide">
+      <h2>Windows에서 설치할 때</h2>
+      <p class="sub">받은 파일을 실행하면 아래와 같은 <b>파란 창</b>이 뜰 수 있습니다.<br>
+      와우씨씨엠이 만든 안전한 프로그램이니, 두 번만 누르시면 됩니다.</p>
+
+      <div class="step">
+        <p class="step-title"><span>1</span><b>추가 정보</b>를 누르세요</p>
+        <div class="ss">
+          <p class="ss-title">Windows의 PC 보호</p>
+          <p class="ss-text">Microsoft Defender SmartScreen에서 인식할 수 없는 앱의 시작을 차단했습니다. 이 앱을 실행하면 PC가 위험에 노출될 수 있습니다.</p>
+          <span class="ss-link hl">추가 정보</span><span class="hl-tag">여기를 누르세요</span>
+          <div class="ss-btns"><span class="ss-btn dim">실행 안 함</span></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <p class="step-title"><span>2</span><b>실행</b>을 누르세요</p>
+        <div class="ss">
+          <p class="ss-title">Windows의 PC 보호</p>
+          <p class="ss-text">Microsoft Defender SmartScreen에서 인식할 수 없는 앱의 시작을 차단했습니다. 이 앱을 실행하면 PC가 위험에 노출될 수 있습니다.</p>
+          <p class="ss-meta">앱: WOWCCM…setup.exe<br>게시자: 알 수 없는 게시자</p>
+          <div class="ss-btns"><span class="hl-tag">여기를 누르세요</span><span class="ss-btn hl">실행</span><span class="ss-btn dim">실행 안 함</span></div>
+        </div>
+      </div>
+
+      <p class="note">
+        · 이 창은 새 프로그램이라 Windows가 아직 잘 모르기 때문에 나옵니다. 설치하는 분이 많아지면 뜨지 않게 됩니다.<br>
+        · 이전 와우씨씨엠 플레이어가 있으면 설치 중에 <b>삭제할지</b> 물어봅니다. 새 플레이어만 쓰시면 되니 <b>예</b>를 누르세요.<br>
+        · 설치가 끝나면 플레이어가 켜지고 바로 방송이 나옵니다.
+      </p>
+
+      <h2 style="margin-top:22px">Mac</h2>
+      <p class="sub" style="margin:0">받은 파일을 열고 앱을 <b>응용 프로그램</b> 폴더로 끌어 놓으세요.<br>
+      Apple의 확인(공증)을 받은 앱이라 바로 열립니다.</p>
     </div>
   </div>
 </div>
