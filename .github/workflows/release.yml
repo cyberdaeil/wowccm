@@ -1,7 +1,8 @@
 name: 설치 파일 빌드
 
 # v2.0.0 같은 태그를 푸시하거나, Actions 탭에서 직접 실행하면
-# Windows(.exe)와 Mac(.dmg) 설치 파일을 만들어 GitHub Releases 초안에 올린다.
+# Windows(.exe)와 Mac(.dmg) 설치 파일을 만들어 GitHub Releases에 올린다.
+# 태그에 "-"가 들어가면(예: v2.0.0-test1) 시험판(pre-release)으로 표시한다.
 on:
   push:
     tags: ["v*"]
@@ -17,9 +18,9 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            args: ""
+            args: "--bundles nsis"
           - platform: macos-latest
-            args: "--target universal-apple-darwin"
+            args: "--target universal-apple-darwin --bundles app,dmg"
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -39,19 +40,34 @@ jobs:
 
       - run: npm ci
 
+      # Mac 서명·공증은 Apple 개발자 계정이 준비되면 APPLE_CERTIFICATE 등을
+      # 저장소 Secrets에 등록하고 아래 env에 추가한다. (빈 값으로 두면 서명을 시도하다 실패한다)
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Mac 서명·공증 (Apple 개발자 계정이 준비되면 저장소 Secrets에 등록)
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: "WOWCCM Player ${{ github.ref_name }}"
-          releaseDraft: true
-          prerelease: false
+          releaseBody: |
+            ## 설치 방법
+
+            **Windows**: `WOWCCM.Player_…_x64-setup.exe`를 받아 실행하세요.
+            "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누릅니다. (코드 서명 전이라 나오는 경고입니다)
+
+            **Mac**: `WOWCCM.Player_…_universal.dmg`를 받아 열고, 앱을 **응용 프로그램** 폴더로 끌어 놓으세요.
+            처음 열 때 "확인되지 않은 개발자" 또는 "손상되었기 때문에 열 수 없습니다"가 나오면:
+            - **시스템 설정 → 개인정보 보호 및 보안** 맨 아래의 **그래도 열기**를 누르거나,
+            - **터미널**에서 `xattr -cr "/Applications/WOWCCM Player.app"` 을 한 번 실행한 뒤 다시 여세요.
+            (Apple 개발자 서명 전이라 나오는 경고입니다)
+          releaseDraft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           args: ${{ matrix.args }}
+
+      # Releases 업로드가 실패해도 Actions 화면에서 받을 수 있도록 따로 보관
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wowccm-player-${{ matrix.platform }}
+          path: |
+            src-tauri/target/**/release/bundle/nsis/*.exe
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+          if-no-files-found: warn

@@ -32,7 +32,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "dmg", "app"],
+    "targets": "all",
     "category": "Music",
     "shortDescription": "WOWCCM 24시간 찬양방송",
     "copyright": "© WOWCCM",
