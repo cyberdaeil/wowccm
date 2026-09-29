@@ -53,7 +53,7 @@ function wowccm_latest_release(): array
             $win = $mac = '';
             foreach ($r['assets'] ?? [] as $a) {
                 $name = $a['name'] ?? '';
-                if (!$win && preg_match('/_x64-setup\.exe$/', $name)) $win = $a['browser_download_url'];
+                if (!$win && preg_match('/_x64[-_]setup\.exe$/', $name)) $win = $a['browser_download_url'];
                 if (!$mac && preg_match('/\.dmg$/', $name)) $mac = $a['browser_download_url'];
             }
             if ($win || $mac) {

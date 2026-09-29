@@ -108,7 +108,7 @@ jobs:
           releaseBody: |
             ## 설치 방법
 
-            **Windows**: `WOWCCM.Wapl_…_x64-setup.exe`를 받아 실행하세요.
+            **Windows**: `WOWCCM.Wapl_…_x64_setup.exe`를 받아 실행하세요.
             "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누릅니다. (코드 서명 전이라 나오는 경고입니다)
 
             **Mac**: `WOWCCM.Wapl_…_universal.dmg`를 받아 열고, 앱을 **응용 프로그램** 폴더로 끌어 놓으세요.
