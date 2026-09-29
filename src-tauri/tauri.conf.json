@@ -47,7 +47,8 @@
       "nsis": {
         "languages": ["Korean", "English"],
         "displayLanguageSelector": false,
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "installerHooks": "./windows/hooks.nsh"
       }
     },
     "macOS": {
