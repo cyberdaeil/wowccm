@@ -110,10 +110,7 @@ jobs:
             "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누릅니다. (코드 서명 전이라 나오는 경고입니다)
 
             **Mac**: `WOWCCM.Player_…_universal.dmg`를 받아 열고, 앱을 **응용 프로그램** 폴더로 끌어 놓으세요.
-            처음 열 때 "확인되지 않은 개발자" 또는 "손상되었기 때문에 열 수 없습니다"가 나오면:
-            - **시스템 설정 → 개인정보 보호 및 보안** 맨 아래의 **그래도 열기**를 누르거나,
-            - **터미널**에서 `xattr -cr "/Applications/WOWCCM Player.app"` 을 한 번 실행한 뒤 다시 여세요.
-            (Apple 개발자 서명 전이라 나오는 경고입니다)
+            (Apple 서명·공증을 받은 앱이라 경고 없이 열립니다)
           releaseDraft: false
           prerelease: ${{ contains(github.ref_type == 'tag' && github.ref_name || inputs.tag, '-') }}
           args: ${{ matrix.args }}
