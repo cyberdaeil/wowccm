@@ -17,6 +17,26 @@ const CACHE_TTL = 60;          // 초
 const ERROR_TTL = 30;          // 오류가 나면 30초 뒤 다시 시도
 const RECENT_VIDEOS = 10;      // 최근 업로드 몇 개를 살펴볼지
 
+// 점검: youtube_live.php?diag=1 (서버 환경과 Google 접속 여부만 보여 준다. 키는 보여 주지 않음)
+if (isset($_GET['diag'])) {
+    $diag = [
+        'php' => PHP_VERSION,
+        'curl' => function_exists('curl_init'),
+        'allow_url_fopen' => (bool)ini_get('allow_url_fopen'),
+        'openssl' => extension_loaded('openssl'),
+        'config_file' => is_file(__DIR__ . '/youtube_live.config.php'),
+        'cache_dir_writable' => is_writable(sys_get_temp_dir()),
+    ];
+    try {
+        wowccm_http_get('https://www.googleapis.com/youtube/v3/videos');
+        $diag['google_connect'] = 'ok';
+    } catch (Throwable $e) {
+        $diag['google_connect'] = $e->getMessage();
+    }
+    echo json_encode($diag, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
+
 $config = @include __DIR__ . '/youtube_live.config.php';
 if (!is_array($config) || empty($config['api_key'])) {
     echo json_encode(['live' => false, 'error' => 'not_configured']);
@@ -112,9 +132,7 @@ function wowccm_live_status(string $apiKey, string $handle, string $cacheFile, ?
 function wowccm_fetch_json(string $endpoint, array $params, string $apiKey): array
 {
     $url = 'https://www.googleapis.com/youtube/v3/' . $endpoint . '?' . http_build_query($params + ['key' => $apiKey]);
-    $ctx = stream_context_create(['http' => ['timeout' => 8, 'ignore_errors' => true]]);
-    $body = @file_get_contents($url, false, $ctx);
-    if ($body === false) throw new RuntimeException('youtube_unreachable');
+    $body = wowccm_http_get($url);
     $data = json_decode($body, true);
     if (!is_array($data)) throw new RuntimeException('youtube_bad_response');
     if (isset($data['error'])) {
@@ -122,6 +140,41 @@ function wowccm_fetch_json(string $endpoint, array $params, string $apiKey): arr
         throw new RuntimeException($data['error']['errors'][0]['reason'] ?? 'youtube_error');
     }
     return $data;
+}
+
+/**
+ * 바깥 주소 읽기. 국내 호스팅은 allow_url_fopen을 막아 둔 경우가 많아 cURL을 먼저 쓴다.
+ * 실패하면 원인(예: "curl: Could not resolve host")을 오류에 담는다. 키는 담지 않는다.
+ */
+function wowccm_http_get(string $url): string
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 8,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, // IPv6가 불안정한 서버 대비
+            CURLOPT_USERAGENT => 'WOWCCM-Player-Server/1.0',
+        ]);
+        $body = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+        if ($body === false) throw new RuntimeException('youtube_unreachable (curl: ' . $err . ')');
+        return $body;
+    }
+    if (!ini_get('allow_url_fopen')) {
+        throw new RuntimeException('youtube_unreachable (서버에 cURL이 없고 allow_url_fopen도 꺼져 있음)');
+    }
+    $ctx = stream_context_create(['http' => ['timeout' => 8, 'ignore_errors' => true]]);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body === false) {
+        $e = error_get_last()['message'] ?? '';
+        $e = preg_replace('/key=[^&\s]+/', 'key=***', $e);
+        throw new RuntimeException('youtube_unreachable (fopen: ' . $e . ')');
+    }
+    return $body;
 }
 
 function wowccm_read_cache(string $file): array
