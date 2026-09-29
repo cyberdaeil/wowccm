@@ -83,3 +83,31 @@
 
 - 비밀글과 댓글은 보여 주지 않습니다.
 - 앱은 이 파일이 없거나 오류가 나면 예전처럼 미니 페이지의 4개 목록을 씁니다.
+
+## player_download.php: 새 플레이어 다운로드 페이지
+
+- 올릴 위치: `wowcast/player_download.php`
+- 주소: https://wowccm.net/wowcast/player_download.php
+- GitHub Releases에서 **최신 설치 파일을 자동으로** 찾아 Windows / Mac 버튼으로 연결합니다. 새 버전을 올려도 이 페이지는 고칠 필요가 없습니다.
+- Mac으로 들어오면 Mac 버튼이, Windows로 들어오면 Windows 버튼이 먼저(주황색) 보입니다.
+- 지금은 시험판(test)도 보여 줍니다. 정식판 v2.0.0을 올린 뒤에는 파일 위쪽의 `WOWCCM_INCLUDE_PRERELEASE`를 `false`로 바꾸세요.
+
+## old_player_notice.php: 이전 플레이어에 "새 플레이어 출시" 배너
+
+이전 플레이어(v1.0)의 오른쪽 칸은 `/wowccm/player_inc.php` 페이지입니다. 그 맨 위 제목 줄("현재 진행중인 방송 정보입니다.")을 주황색 배너로 바꿉니다. 제목 줄과 높이가 같아서 아래 내용이 밀리지 않습니다.
+
+1. `old_player_notice.php`를 `wowcast/` 폴더에 올립니다.
+2. `/wowccm/player_inc.php`를 열어 아래 부분을 찾습니다.
+   ```html
+   <!-- 타이틀 -->
+   <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border:1px #e6e6e6 solid;border-bottom:0;">
+     <tr><td bgcolor="#ffffff" align="center" height="17" valign="bottom">
+       <font color="#666666">현재 진행중인 방송 정보입니다.</font>
+     </td></tr>
+   </table>
+   ```
+3. 이 `<table>…</table>` 부분을 지우고, 그 자리에 아래 한 줄을 넣습니다. (`<!-- 타이틀 -->` 줄은 남겨도 됩니다)
+   ```php
+   <?php @include $_SERVER['DOCUMENT_ROOT'] . '/wowcast/old_player_notice.php'; ?>
+   ```
+4. 배너를 끄고 싶으면 `old_player_notice.php` 안의 `$WOWCCM_SHOW_NEW_PLAYER_NOTICE`를 `false`로 바꾸면 됩니다. 원래 제목 줄로 돌아갑니다.
