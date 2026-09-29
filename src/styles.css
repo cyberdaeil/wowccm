@@ -71,13 +71,17 @@ input { font: inherit; color: inherit; }
 
 /* 진행자 이미지 + 곡 정보 */
 .hero { background: #fff; }
-.cover { position: relative; height: 190px; background: #efeff1; overflow: hidden; }
+/* 진행자 사진: 아래 글자·버튼과 같은 18px 여백, 둥근 모서리의 카드 */
+.cover {
+  position: relative; height: 172px; margin: 14px 18px 0; border-radius: 12px;
+  background: #efeff1; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
 .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cover__empty {
   height: 100%; display: grid; place-items: center; font-size: 30px; font-weight: 900; letter-spacing: -1px;
   color: #d5d5da;
 }
-.cover--video { height: 225px; background: #000; }
+.cover--video { height: 205px; background: #000; }
 .cover--video iframe { display: block; width: 100%; height: 100%; border: 0; }
 .video-close {
   position: absolute; right: 10px; top: 10px; display: grid; place-items: center; width: 28px; height: 28px;
@@ -87,7 +91,7 @@ input { font: inherit; color: inherit; }
 .watching { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--accent); }
 .watching i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: live-blink 1.4s ease-in-out infinite; }
 .onair-mark {
-  position: absolute; left: 14px; top: 12px; padding: 5px 9px; border-radius: 12px;
+  position: absolute; left: 10px; top: 10px; padding: 5px 9px; border-radius: 12px;
   background: var(--accent); color: #fff; font-size: 9px; font-weight: 900; letter-spacing: 0.35px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }

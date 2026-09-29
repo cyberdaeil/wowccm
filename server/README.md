@@ -65,3 +65,21 @@
 
 - 올릴 위치: `wowcast/visible_embed.php` (설정할 것은 없습니다)
 - 확인 방법: https://wowccm.net/wowcast/visible_embed.php?check=1 을 열었을 때 `ok`가 보이면 정상입니다.
+
+## player_requests.php: 앱 전용 사연 목록 (최근 7개)
+
+기존 `wow_mini_test_v2.php`는 다른 페이지에서도 쓰고 있어서 건드리지 않습니다. 앱이 쓸 사연 목록만 이 파일에서 따로 만듭니다.
+
+1. 파일 맨 위의 `WOWCCM_REQUEST_BOARD = ''` 따옴표 안에 **사연&신청곡 게시판 이름**을 넣습니다.
+   - 게시판 이름은 홈페이지에서 사연 게시판을 열었을 때 주소의 `bo_table=` 뒤에 오는 글자입니다.
+2. 파일을 `wowcast/` 폴더에 올립니다. 그누보드의 `common.php`가 한 단계 위 폴더(홈페이지 맨 위 폴더)에 있어야 합니다.
+3. 확인: https://wowccm.net/wowcast/player_requests.php 를 열었을 때 `{"ok":true,"items":[…]}`가 나오면 정상입니다.
+
+| 보이는 내용 | 뜻 |
+|---|---|
+| `board_not_configured` | 게시판 이름을 아직 넣지 않았음 |
+| `board_query_failed` | 게시판 이름이 틀렸음 |
+| `common_php_not_found` | 파일을 올린 폴더 위치가 다름 |
+
+- 비밀글과 댓글은 보여 주지 않습니다.
+- 앱은 이 파일이 없거나 오류가 나면 예전처럼 미니 페이지의 4개 목록을 씁니다.

@@ -11,7 +11,8 @@ export const API = {
   program: `${MINI}?mini_program_status=1`, // {"program","presenter","onair"}
   song: "/daeil/music5.php?song_check=1", // {"status","song"}
   dj: "/wowcast/dj5.php?check=1", // {"icq","image"}
-  requests: `${MINI}?mini_request_list=1`, // 사연 목록 HTML 조각
+  playerRequests: "/wowcast/player_requests.php?limit=7", // 앱 전용 사연 목록 7개 (server/player_requests.php)
+  requests: `${MINI}?mini_request_list=1`, // 사연 목록 HTML 조각 (4개, 위 파일이 없을 때 대신 사용)
   miniPage: MINI, // 다시듣기·편성표가 이 페이지 안에 들어 있다
   notices: "/bbs/rss.php?bo_table=news", // 공지사항 게시판 RSS
   youtubeLive: "/wowcast/youtube_live.php", // 보이는 방송 여부 (server/youtube_live.php, YouTube API)

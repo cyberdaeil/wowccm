@@ -78,7 +78,34 @@ export function parseRequests(html: string): RequestPost[] {
   }));
 }
 
+/** 앱 전용 목록(player_requests.php, JSON)을 해석한다. 형식이 맞지 않으면 null */
+export function parsePlayerRequests(json: string): RequestPost[] | null {
+  try {
+    const d = JSON.parse(json);
+    if (!d?.ok || !Array.isArray(d.items)) return null;
+    return d.items.map((it: Record<string, unknown>) => ({
+      name: clean(String(it.name ?? "")),
+      content: String(it.content ?? "")
+        .split("\n")
+        .map((l) => l.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join("\n"),
+      day: clean(String(it.day ?? "")),
+      clock: clean(String(it.clock ?? "")),
+    }));
+  } catch {
+    return null;
+  }
+}
+
+/** 사연 목록: 앱 전용 파일(7개)을 먼저 쓰고, 없으면 미니 페이지 목록(4개)을 쓴다 */
 export async function getRequests(): Promise<RequestPost[]> {
+  try {
+    const posts = parsePlayerRequests(await wowGet(API.playerRequests));
+    if (posts) return posts;
+  } catch {
+    /* 파일이 아직 없음 → 기존 목록 */
+  }
   return parseRequests(await wowGet(API.requests));
 }
 

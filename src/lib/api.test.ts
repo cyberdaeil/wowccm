@@ -1,6 +1,15 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { embedSrc, kstMinutes, markOnAir, parseMiniPage, parseNotices, parseRequests, videoIdFromUrl } from "./api";
+import {
+  embedSrc,
+  kstMinutes,
+  markOnAir,
+  parseMiniPage,
+  parseNotices,
+  parsePlayerRequests,
+  parseRequests,
+  videoIdFromUrl,
+} from "./api";
 
 // 한국 시각 2026-09-29 14:30 = UTC 05:30
 const KST_1430 = new Date("2026-09-29T05:30:00Z");
@@ -106,5 +115,22 @@ describe("보이는 방송 영상 주소", () => {
     expect(embedSrc({ videoId: "abc" }, false)).toMatch(/^https:\/\/www\.youtube\.com\/embed\/abc\?autoplay=1/);
     expect(embedSrc({ channelId: "UCx" }, false)).toMatch(/embed\/live_stream\?channel=UCx&/);
     expect(embedSrc({}, true)).toBeNull();
+  });
+});
+
+describe("parsePlayerRequests (앱 전용 사연 목록)", () => {
+  it("JSON 목록을 읽는다", () => {
+    const json = JSON.stringify({
+      ok: true,
+      items: [{ name: "원혜영", content: "첫 줄\n  둘째   줄", day: "09-29", clock: "15:59" }],
+    });
+    expect(parsePlayerRequests(json)).toEqual([
+      { name: "원혜영", content: "첫 줄\n둘째 줄", day: "09-29", clock: "15:59" },
+    ]);
+  });
+
+  it("설정 전이거나 형식이 다르면 null (기존 목록으로 대체)", () => {
+    expect(parsePlayerRequests('{"ok":false,"error":"board_not_configured"}')).toBeNull();
+    expect(parsePlayerRequests("<html>404</html>")).toBeNull();
   });
 });
