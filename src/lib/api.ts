@@ -24,6 +24,9 @@ export interface Notice {
   title: string;
   link: string;
   date: string; // MM-DD
+  /** 올린 시각 (RSS의 dc:date) */
+  at?: string;
+  kind?: "notice" | "event";
 }
 
 export interface ScheduleItem {
@@ -227,12 +230,47 @@ export function parseNotices(xml: string, limit = 5): Notice[] {
       title: clean(it.querySelector("title")?.textContent),
       link: clean(it.querySelector("link")?.textContent).replace(/&amp;/g, "&"),
       date: m ? `${m[1]}-${m[2]}` : "",
+      at: date,
     };
   });
 }
 
+/** 끝난 이벤트 제목 앞머리: [종료], [당첨자발표], [당첨자 발표], [마감], [결과] */
+const ENDED_EVENT = /^\s*[\[(【]\s*(종료|마감|결과|당첨자\s*발표)/;
+/** 이 기간이 지난 글은 [종료] 표시가 없어도 진행 중으로 보지 않는다 */
+const EVENT_MAX_AGE_DAYS = 60;
+
+/** 이벤트 게시판에서 진행 중인 이벤트만 고른다 */
+export function parseActiveEvents(xml: string, now = new Date(), limit = 3): Notice[] {
+  return parseNotices(xml, 20)
+    .filter((e) => !ENDED_EVENT.test(e.title))
+    .filter((e) => {
+      const t = e.at ? Date.parse(e.at) : NaN;
+      return Number.isFinite(t) && now.getTime() - t <= EVENT_MAX_AGE_DAYS * 86_400_000;
+    })
+    .slice(0, limit)
+    .map((e) => ({ ...e, kind: "event" as const }));
+}
+
+/** 공지와 이벤트를 번갈아 늘어놓는다: 공지, 이벤트, 공지, 이벤트… (한쪽이 모자라면 남은 쪽만) */
+export function interleave(notices: Notice[], events: Notice[]): Notice[] {
+  const out: Notice[] = [];
+  for (let i = 0; i < Math.max(notices.length, events.length); i++) {
+    if (notices[i]) out.push({ ...notices[i], kind: "notice" });
+    if (events[i]) out.push(events[i]);
+  }
+  return out;
+}
+
+/** 맨 아래 한 줄에 돌아가며 보여 줄 공지·이벤트. 이벤트 게시판을 못 읽어도 공지는 나온다 */
 export async function getNotices(): Promise<Notice[]> {
-  return parseNotices(await wowGet(API.notices));
+  const [notices, events] = await Promise.all([
+    wowGet(API.notices).then((x) => parseNotices(x)),
+    wowGet(API.events)
+      .then((x) => parseActiveEvents(x))
+      .catch(() => [] as Notice[]),
+  ]);
+  return interleave(notices, events);
 }
 
 /**

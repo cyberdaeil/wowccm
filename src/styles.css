@@ -189,6 +189,8 @@ input { font: inherit; color: inherit; }
   flex-shrink: 0; padding: 2px 6px; border-radius: 4px; background: var(--accent); color: #fff;
   font-size: 9px; font-weight: 800;
 }
+/* 이벤트는 보라색 표시로 공지와 구분 */
+.notice__tag--event { background: #7c4dff; }
 .notice__text {
   flex: 1; min-width: 0; font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; animation: notice-in 0.4s ease;

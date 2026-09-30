@@ -20,6 +20,7 @@ export const API = {
   requests: "?mini_request_list=1", // MINI_PAGES 뒤에 붙인다. 사연 목록 HTML 조각 (4개, 위 파일이 없을 때 대신 사용)
   miniPage: "", // MINI_PAGES 자체. 다시듣기·편성표가 이 페이지 안에 들어 있다
   notices: "/bbs/rss.php?bo_table=news", // 공지사항 게시판 RSS
+  events: "/bbs/rss.php?bo_table=dica_h", // 이벤트 게시판 RSS (비밀글은 RSS에 나오지 않는다)
   youtubeLive: "/wowcast/youtube_live.php", // 보이는 방송 여부 (server/youtube_live.php, YouTube API)
   visibleEmbed: "/wowcast/visible_embed.php", // 플레이어 안 영상 재생 페이지 (server/visible_embed.php)
 };

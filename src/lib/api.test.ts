@@ -2,9 +2,11 @@
 import { describe, expect, it } from "vitest";
 import {
   embedSrc,
+  interleave,
   kstMinutes,
   markOnAir,
   parseMiniPage,
+  parseActiveEvents,
   parseNotices,
   parsePlayerRequests,
   parseRequests,
@@ -97,6 +99,7 @@ describe("parseNotices", () => {
         title: "와우씨씨엠 서버이전 안내",
         link: "https://wowccm.net/bbs/board.php?bo_table=news&wr_id=3227",
         date: "09-23",
+        at: "2026-09-23T01:35:32+09:00",
       },
     ]);
   });
@@ -132,5 +135,42 @@ describe("parsePlayerRequests (앱 전용 사연 목록)", () => {
   it("설정 전이거나 형식이 다르면 null (기존 목록으로 대체)", () => {
     expect(parsePlayerRequests('{"ok":false,"error":"board_not_configured"}')).toBeNull();
     expect(parsePlayerRequests("<html>404</html>")).toBeNull();
+  });
+});
+
+describe("이벤트", () => {
+  const rss = (items: [string, string][]) => `<?xml version="1.0" encoding="utf-8" ?>
+    <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel>
+    ${items.map(([t, d], i) => `<item><title>${t}</title><link>https://wowccm.net/bbs/board.php?bo_table=dica_h&amp;amp;wr_id=${i}</link><dc:date>${d}</dc:date></item>`).join("")}
+    </channel></rss>`;
+  const now = new Date("2026-09-30T12:00:00+09:00");
+
+  it("끝난 이벤트와 60일이 지난 글은 빼고 진행 중인 것만 고른다", () => {
+    const xml = rss([
+      ["찬양 앨범 증정 이벤트", "2026-09-20T10:00:00+09:00"],
+      ["[종료] 영화 예매권 이벤트", "2026-09-10T10:00:00+09:00"],
+      ["[당첨자발표] 영화 예매권", "2026-09-15T10:00:00+09:00"],
+      ["[당첨자 발표] 도서 증정", "2026-09-16T10:00:00+09:00"],
+      ["[마감] 콘서트 초대", "2026-09-17T10:00:00+09:00"],
+      ["표시를 깜빡한 옛 이벤트", "2022-04-04T10:00:00+09:00"],
+    ]);
+    expect(parseActiveEvents(xml, now).map((e) => e.title)).toEqual(["찬양 앨범 증정 이벤트"]);
+    expect(parseActiveEvents(xml, now)[0].kind).toBe("event");
+  });
+
+  it("진행 중 이벤트가 없으면 빈 목록", () => {
+    expect(parseActiveEvents(rss([["[종료] 지난 이벤트", "2026-09-20T10:00:00+09:00"]]), now)).toEqual([]);
+  });
+
+  it("공지와 이벤트를 번갈아 늘어놓는다", () => {
+    const n = (t: string) => ({ title: t, link: "", date: "" });
+    const e = (t: string) => ({ title: t, link: "", date: "", kind: "event" as const });
+    expect(interleave([n("공지1"), n("공지2"), n("공지3")], [e("이벤트1")]).map((x) => x.title)).toEqual([
+      "공지1",
+      "이벤트1",
+      "공지2",
+      "공지3",
+    ]);
+    expect(interleave([n("공지1")], []).map((x) => x.kind)).toEqual(["notice"]);
   });
 });

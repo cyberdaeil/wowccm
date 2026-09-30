@@ -51,7 +51,9 @@ export function StationExtras({ notices, visibleLive, watching, onVisible }: Pro
       </div>
       {n && (
         <button className="notice" onClick={() => n.link && openUrl(n.link)} title={n.title}>
-          <span className="notice__tag">공지</span>
+          <span className={`notice__tag ${n.kind === "event" ? "notice__tag--event" : ""}`}>
+            {n.kind === "event" ? "이벤트" : "공지"}
+          </span>
           <span key={i} className="notice__text">
             {n.title}
           </span>
