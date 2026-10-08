@@ -51,8 +51,9 @@
 
 1. `youtube_live.config.sample.php`를 복사해 이름을 `youtube_live.config.php`로 바꿉니다.
 2. 그 안의 `'여기에_API_키'` 자리에 발급받은 키를 넣습니다.
-3. 두 파일을 서버의 `wowcast/` 폴더에 올립니다.
+3. 세 파일을 서버의 `wowcast/` 폴더에 올립니다.
    - `wowcast/youtube_live.php`
+   - `wowcast/youtube_live.lib.php` (실제 확인 함수. 웹 플레이어도 함께 씁니다)
    - `wowcast/youtube_live.config.php`
 
 > `youtube_live.config.php`는 키가 들어 있으므로 **GitHub에 올리지 마세요.** 저장소의 `.gitignore`에 이미 제외되어 있습니다.
@@ -70,6 +71,24 @@
 | `{"live":false,"error":"channel_not_found"}` | 설정 파일의 `handle`(채널 핸들)을 확인 |
 
 결과는 서버에 1분 동안 저장해 두고 다시 씁니다. 그래서 라이브를 켠 뒤 플레이어에 반영되기까지 **최대 약 3분**이 걸릴 수 있습니다. 서버 저장 1분에 앱의 확인 주기 2분이 더해진 시간입니다.
+
+## 웹 플레이어(/renew/player/)의 보이는 라디오 아이콘
+
+웹 플레이어의 볼륨바 오른쪽 아이콘도 와플과 **같은 확인 결과**를 씁니다.
+두 플레이어가 서버의 같은 저장 파일을 보므로, 유튜브에는 **1분에 한 번만** 묻습니다. (API 하루 약 2,880 유닛, 무료 한도 10,000)
+
+| 저장소 파일 | 올릴 위치 |
+|---|---|
+| `renew_player/video-live.php` | `renew/player/video-live.php` (기존 파일을 바꿔 끼움) |
+| `renew_player/video-live.js` | `renew/player/video-live.js` (기본 주소만 `@wowccm/live`로 바뀜) |
+
+- `wowcast/youtube_live.lib.php`와 `youtube_live.config.php`가 먼저 올라가 있어야 합니다.
+- 응답 형식(`live`, `available`, `url`, `checked_at`)은 예전과 같아서 화면 코드는 고칠 것이 없습니다.
+- 확인: https://wowccm.net/renew/player/video-live.php?diag=1 → `"source":"youtube_live.lib.php","error":null` 이면 정상입니다.
+  - `"source":null` → `wowcast/youtube_live.lib.php`가 없음
+  - `"error":"not_configured"` → 설정 파일(키)이 없음
+  - `"error":"quotaExceeded"` 등 → 유튜브 쪽 문제. 아이콘은 회색으로 둡니다.
+- JS를 바꿨다면 `index.html`의 `video-live.js?v=1`을 `?v=2`로 올려 브라우저가 새 파일을 받게 합니다. 같은 파일의 `<a id="videoRadio" href="...">` 주소도 `https://www.youtube.com/@wowccm/live`로 바꾸면 좋습니다.
 
 ## visible_embed.php: 플레이어 안에서 영상 재생
 
