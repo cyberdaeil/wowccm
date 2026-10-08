@@ -1,0 +1,119 @@
+name: 서버 파일 올리기
+
+# Actions 탭에서 직접 실행하면 server/ 폴더의 파일을 wowccm.net에 FTP로 올린다.
+# 접속 정보는 저장소 Settings → Secrets and variables → Actions 에 등록한다.
+#   FTP_SERVER    예: wowccm.net 또는 호스팅이 알려 준 FTP 주소
+#   FTP_USERNAME  FTP 아이디
+#   FTP_PASSWORD  FTP 비밀번호
+#   FTP_ROOT      (선택) 웹 문서 폴더. 비워 두면 /, www, public_html, html, htdocs 중
+#                 wowcast 폴더가 있는 곳을 찾아 쓴다.
+#   FTP_PROTOCOL  (선택) ftp 또는 sftp. 기본 ftp
+#
+# 덮어쓰는 파일은 먼저 같은 폴더에 백업해 둔다. (video-live.bak-날짜시각.php, index.html.bak-날짜시각 등)
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "시험 실행 (접속·폴더 확인만 하고 올리지 않음)"
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: lftp 설치
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null
+
+      - name: 올리기
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_ROOT: ${{ secrets.FTP_ROOT }}
+          FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FTP_SERVER:-}" ] || [ -z "${FTP_USERNAME:-}" ] || [ -z "${FTP_PASSWORD:-}" ]; then
+            echo "::error::FTP_SERVER / FTP_USERNAME / FTP_PASSWORD Secrets를 먼저 등록하세요"; exit 1
+          fi
+          PROTO="${FTP_PROTOCOL:-ftp}"
+          export LFTP_PASSWORD="$FTP_PASSWORD"
+          # 국내 호스팅 FTP는 자체 서명 인증서가 많아, 암호화는 쓰되 인증서 확인은 하지 않는다
+          SETTINGS="set net:timeout 20; set net:max-retries 2; set ftp:ssl-allow true; set ssl:verify-certificate no; set ftp:passive-mode true; set sftp:auto-confirm yes"
+          # 명령을 파일로 넘긴다 (비밀번호는 파일에 쓰지 않고 LFTP_PASSWORD 환경변수로 넘긴다)
+          ftp_run() {
+            local f; f=$(mktemp)
+            printf '%s\nopen --env-password -u "%s" "%s://%s"\n%s\nbye\n' "$SETTINGS" "$FTP_USERNAME" "$PROTO" "$FTP_SERVER" "$1" > "$f"
+            local rc=0; lftp -f "$f" || rc=$?; rm -f "$f"; return $rc
+          }
+
+          # 웹 문서 폴더 찾기
+          ROOT="${FTP_ROOT:-}"
+          if [ -z "$ROOT" ]; then
+            for d in "" www public_html html htdocs; do
+              if ftp_run "cls -1 ${d:+$d/}wowcast/youtube_live.php" > /dev/null 2>&1; then ROOT="$d"; break; fi
+            done
+            if [ -z "$ROOT" ] && ! ftp_run "cls -1 wowcast/youtube_live.php" > /dev/null 2>&1; then
+              echo "::error::wowcast/youtube_live.php가 있는 폴더를 찾지 못했습니다. FTP_ROOT를 등록하세요"
+              ftp_run "cls -1" || true
+              exit 1
+            fi
+          fi
+          P="${ROOT:+$ROOT/}"
+          echo "웹 문서 폴더: /${ROOT}"
+
+          # 웹 플레이어 첫 화면 파일 (index.html 또는 index.php)
+          INDEX=""
+          for f in index.html index.php; do
+            if ftp_run "cls -1 ${P}renew/player/$f" > /dev/null 2>&1; then INDEX="$f"; break; fi
+          done
+          echo "웹 플레이어 첫 화면: ${INDEX:-찾지 못함}"
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "시험 실행이라 여기서 멈춥니다. 문제가 없으면 dry_run을 끄고 다시 실행하세요."
+            exit 0
+          fi
+
+          TS=$(date -u +%Y%m%d%H%M%S)
+          WORK=$(mktemp -d)
+          # PHP 파일은 끝을 .php로 남긴다 (video-live.bak-날짜.php). .php.bak으로 두면 웹에서 소스가 그대로 보인다
+          bak() { local to; case "$1" in *.php) to="${1%.php}.bak-$TS.php";; *) to="$1.bak-$TS";; esac
+                  echo "mv $1 $to || echo 'no-backup: $1';"; }
+
+          # 첫 화면 파일 내려받아 두 군데 고치기 (video-live.js?v=1 → v=2, 예전 유튜브 주소 → @wowccm)
+          INDEX_CMD=""
+          if [ -n "$INDEX" ]; then
+            ftp_run "get ${P}renew/player/$INDEX -o $WORK/$INDEX"
+            cp "$WORK/$INDEX" "$WORK/$INDEX.orig"
+            sed -i -E 's#video-live\.js\?v=[0-9]+#video-live.js?v=2#; s#https://www\.youtube\.com/c/wowccm/live#https://www.youtube.com/@wowccm/live#g' "$WORK/$INDEX"
+            if cmp -s "$WORK/$INDEX" "$WORK/$INDEX.orig"; then
+              echo "첫 화면 파일은 이미 고쳐져 있어 그대로 둡니다"
+            else
+              diff "$WORK/$INDEX.orig" "$WORK/$INDEX" | grep '^[<>]' | cut -c1-160 || true
+              INDEX_CMD="$(bak ${P}renew/player/$INDEX) put $WORK/$INDEX -o ${P}renew/player/$INDEX;"
+            fi
+          fi
+
+          # 올리기. youtube_live.lib.php를 가장 먼저 올린다 (나머지가 이 파일을 쓴다)
+          ftp_run "put server/youtube_live.lib.php -o ${P}wowcast/youtube_live.lib.php;
+            $(bak ${P}wowcast/youtube_live.php) put server/youtube_live.php -o ${P}wowcast/youtube_live.php;
+            $(bak ${P}renew/player/video-live.php) put server/renew_player/video-live.php -o ${P}renew/player/video-live.php;
+            $(bak ${P}renew/player/video-live.js) put server/renew_player/video-live.js -o ${P}renew/player/video-live.js;
+            $INDEX_CMD"
+          echo "올리기 완료 (백업 꼬리표: bak-$TS)"
+
+      - name: 확인
+        if: ${{ !inputs.dry_run }}
+        run: |
+          sleep 3
+          echo "와플:  $(curl -sS https://wowccm.net/wowcast/youtube_live.php)"
+          echo "웹:    $(curl -sS 'https://wowccm.net/renew/player/video-live.php?diag=1')"
+          curl -sS 'https://wowccm.net/renew/player/video-live.php?diag=1' | grep -q '"source":"youtube_live.lib.php","error":null' \
+            && curl -sS https://wowccm.net/wowcast/youtube_live.php | grep -q '"checkedAt"' \
+            && ! curl -sS https://wowccm.net/wowcast/youtube_live.php | grep -q '"error"' \
+            || { echo "::error::확인 실패. 위 응답을 확인하세요 (백업 파일로 되돌릴 수 있습니다)"; exit 1; }
+          echo "정상입니다"
