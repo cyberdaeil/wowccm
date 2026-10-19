@@ -55,7 +55,9 @@
       <label><input type="radio" name="dur" value="60">1분</label>
       <label><input type="radio" name="dur" value="90">1분 30초</label>
       <label><input type="radio" name="dur" value="120">2분</label>
+      <label id="durMusicLbl" style="opacity:.45"><input type="radio" name="dur" value="music" disabled>음악 길이와 같게</label>
     </div>
+    <div class="hint" id="durHint">음악 길이에 맞추려면 아래에서 음악을 먼저 고르세요. (최대 10분)</div>
   </div>
 
   <div class="card">
@@ -71,7 +73,22 @@
   </div>
 
   <div class="card">
-    <h2>4. 음악 (선택)</h2>
+    <h2>4. 움직임 효과</h2>
+    <div class="opts">
+      <label><input type="radio" name="fx" value="zoomin" checked>천천히 다가가기</label>
+      <label><input type="radio" name="fx" value="zoomout">천천히 멀어지기</label>
+      <label><input type="radio" name="fx" value="panlr">왼쪽→오른쪽 흐르기</label>
+      <label><input type="radio" name="fx" value="panrl">오른쪽→왼쪽 흐르기</label>
+      <label><input type="radio" name="fx" value="none">없음 (정지 화면)</label>
+    </div>
+    <div class="opts" style="margin-top:8px">
+      <label><input type="radio" name="fade" value="1" checked>처음·끝 부드럽게 (검정에서 나타나고 사라짐)</label>
+      <label><input type="radio" name="fade" value="0">그냥 시작하고 끝내기</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>5. 음악 (선택)</h2>
     <div class="musicrow">
       <button type="button" id="musicBtn">음악 파일 고르기</button>
       <button type="button" id="musicClear" style="display:none">빼기</button>
@@ -1964,7 +1981,7 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
 const { Muxer, ArrayBufferTarget } = Mp4Muxer;
 
 const $ = id => document.getElementById(id);
-const FPS = 5, SR = 48000, CH = 2;
+const SR = 48000, CH = 2, MAX_SEC = 600;
 let image = null, music = null, outUrl = null;
 
 const status = (t, err) => { $('status').textContent = t; $('status').className = err ? 'err' : ''; };
@@ -1998,26 +2015,46 @@ $('musicFile').onchange = e => {
   music = e.target.files[0] || null;
   $('musicName').textContent = music ? music.name : '없으면 무음 영상이 됩니다';
   $('musicClear').style.display = music ? '' : 'none';
+  syncMusicDur();
 };
-$('musicClear').onclick = () => { music = null; $('musicFile').value = ''; $('musicName').textContent = '없으면 무음 영상이 됩니다'; $('musicClear').style.display = 'none'; };
+$('musicClear').onclick = () => { music = null; $('musicFile').value = ''; $('musicName').textContent = '없으면 무음 영상이 됩니다'; $('musicClear').style.display = 'none'; syncMusicDur(); };
+function syncMusicDur() {
+  const r = document.querySelector('input[name=dur][value=music]');
+  r.disabled = !music;
+  $('durMusicLbl').style.opacity = music ? '' : '.45';
+  if (!music && r.checked) document.querySelector('input[name=dur][value="30"]').checked = true;
+}
 
-// ---- 한 장 그리기
-function drawFrame(canvas, w, h, fit) {
+// ---- 한 장 그리기 (t: 0~1 진행도)
+const ease = x => x * x * (3 - 2 * x);
+function drawFrame(canvas, w, h, fit, fx, t, fadeSec, sec, now) {
   const g = canvas.getContext('2d');
   g.fillStyle = '#000';
   g.fillRect(0, 0, w, h);
-  const s = (fit === 'cover' ? Math.max : Math.min)(w / image.width, h / image.height);
-  const dw = image.width * s, dh = image.height * s;
+  const base = (fit === 'cover' ? Math.max : Math.min)(w / image.width, h / image.height);
+  const e = ease(t);
+  let zoom = 1, dx = 0;
+  if (fx === 'zoomin') zoom = 1 + 0.12 * e;
+  else if (fx === 'zoomout') zoom = 1.12 - 0.12 * e;
+  else if (fx === 'panlr' || fx === 'panrl') { zoom = 1.12; dx = (fx === 'panlr' ? 1 : -1) * (0.5 - e) * 0.1 * w; }
+  const dw = image.width * base * zoom, dh = image.height * base * zoom;
   g.imageSmoothingQuality = 'high';
-  g.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  g.drawImage(image, (w - dw) / 2 + dx, (h - dh) / 2, dw, dh);
+  if (fadeSec > 0) {
+    const a = Math.min(now / fadeSec, (sec - now) / fadeSec, 1);
+    if (a < 1) { g.fillStyle = `rgba(0,0,0,${1 - Math.max(0, a)})`; g.fillRect(0, 0, w, h); }
+  }
+}
+
+// ---- 음악 읽기
+async function decodeMusic(file) {
+  const raw = await file.arrayBuffer();
+  const tmp = new AudioContext();
+  try { return await tmp.decodeAudioData(raw); } finally { tmp.close(); }
 }
 
 // ---- 음악을 영상 길이에 맞춰 PCM으로
-async function renderAudio(file, seconds) {
-  const raw = await file.arrayBuffer();
-  const tmp = new AudioContext();
-  let buf;
-  try { buf = await tmp.decodeAudioData(raw); } finally { tmp.close(); }
+async function renderAudio(buf, seconds) {
   const off = new OfflineAudioContext(CH, SR * seconds, SR);
   const src = off.createBufferSource();
   src.buffer = buf;
@@ -2033,7 +2070,10 @@ async function renderAudio(file, seconds) {
 
 // ---- 만들기
 $('go').onclick = async () => {
-  const seconds = +val('dur');
+  let seconds = val('dur') === 'music' ? 0 : +val('dur');
+  const fx = val('fx');
+  const fadeSec = val('fade') === '1' ? 1.5 : 0;
+  const FPS = fx === 'none' ? 5 : 24;
   const land = val('ori') === 'land';
   const W = land ? 1920 : 1080, H = land ? 1080 : 1920;
   const fit = val('fit');
@@ -2044,9 +2084,17 @@ $('go').onclick = async () => {
   if (outUrl) { URL.revokeObjectURL(outUrl); outUrl = null; }
 
   try {
-    const vcfg = { codec: 'avc1.64002A', width: W, height: H, bitrate: 2_500_000, framerate: FPS };
+    const vcfg = { codec: 'avc1.64002A', width: W, height: H, bitrate: fx === 'none' ? 2_500_000 : 5_000_000, framerate: FPS };
     const vs = await VideoEncoder.isConfigSupported(vcfg);
     if (!vs.supported) throw new Error('이 브라우저는 mp4(H.264) 영상 만들기를 지원하지 않습니다. 크롬이나 엣지를 써 주세요.');
+
+    let buf = null;
+    if (music) {
+      status('음악을 읽는 중…');
+      try { buf = await decodeMusic(music); }
+      catch { throw new Error('음악 파일을 읽을 수 없습니다. mp3, m4a, wav 파일을 써 주세요.'); }
+      if (!seconds) seconds = Math.min(MAX_SEC, Math.ceil(buf.duration));
+    }
 
     const muxer = new Muxer({
       target: new ArrayBufferTarget(),
@@ -2068,8 +2116,7 @@ $('go').onclick = async () => {
       status('음악을 준비하는 중…');
       const acfg = { codec: 'mp4a.40.2', numberOfChannels: CH, sampleRate: SR, bitrate: 128_000 };
       if (!(await AudioEncoder.isConfigSupported(acfg)).supported) throw new Error('이 브라우저는 음악(AAC) 넣기를 지원하지 않습니다.');
-      try { pcm = await renderAudio(music, seconds); }
-      catch { throw new Error('음악 파일을 읽을 수 없습니다. mp3, m4a, wav 파일을 써 주세요.'); }
+      pcm = await renderAudio(buf, seconds);
       const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { fatal = e; } });
       aenc.configure(acfg);
       const CHUNK = SR;
@@ -2090,15 +2137,15 @@ $('go').onclick = async () => {
     // 영상
     status('영상을 만드는 중…');
     const canvas = new OffscreenCanvas(W, H);
-    drawFrame(canvas, W, H, fit);
     const frames = seconds * FPS;
     for (let i = 0; i < frames; i++) {
+      if (fx !== 'none' || fadeSec > 0 || i === 0) drawFrame(canvas, W, H, fit, fx, i / frames, fadeSec, seconds, i / FPS);
       const vf = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
       venc.encode(vf, { keyFrame: i % FPS === 0 });
       vf.close();
       if (venc.encodeQueueSize > 10) await new Promise(r => setTimeout(r, 5));
       if (fatal) throw fatal;
-      if (i % 10 === 0) { bar.value = i / frames * 100; await new Promise(r => setTimeout(r)); }
+      if (i % 12 === 0) { bar.value = i / frames * 100; await new Promise(r => setTimeout(r)); }
     }
     await venc.flush(); venc.close();
     if (fatal) throw fatal;
