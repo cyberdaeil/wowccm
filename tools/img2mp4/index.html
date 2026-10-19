@@ -2084,9 +2084,14 @@ $('go').onclick = async () => {
   if (outUrl) { URL.revokeObjectURL(outUrl); outUrl = null; }
 
   try {
-    const vcfg = { codec: 'avc1.64002A', width: W, height: H, bitrate: fx === 'none' ? 2_500_000 : 4_000_000, framerate: FPS, hardwareAcceleration: 'prefer-hardware', latencyMode: 'realtime' };
-    const vs = await VideoEncoder.isConfigSupported(vcfg);
-    if (!vs.supported) throw new Error('이 브라우저는 mp4(H.264) 영상 만들기를 지원하지 않습니다. 크롬이나 엣지를 써 주세요.');
+    // 컴퓨터마다 되는 H.264 설정이 달라서, 되는 것을 찾을 때까지 차례로 시도한다
+    const bitrate = fx === 'none' ? 2_500_000 : 4_000_000;
+    let vcfg = null;
+    for (const codec of ['avc1.64002A', 'avc1.640028', 'avc1.4D402A', 'avc1.4D4028', 'avc1.42002A', 'avc1.420028']) {
+      const c = { codec, width: W, height: H, bitrate, framerate: FPS };
+      try { if ((await VideoEncoder.isConfigSupported(c)).supported) { vcfg = c; break; } } catch {}
+    }
+    if (!vcfg) throw new Error('이 컴퓨터의 브라우저에서는 mp4(H.264) 영상 만들기가 되지 않습니다. 크롬을 최신으로 업데이트한 뒤 다시 해 보세요. (크롬 주소창에 chrome://settings/help)');
 
     let buf = null;
     if (music) {
