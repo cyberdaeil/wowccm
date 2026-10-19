@@ -32,6 +32,7 @@
   video { width:100%; border-radius:8px; margin-top:12px; background:#000; display:none; }
   a.dl { display:none; margin-top:12px; text-align:center; padding:12px; border:1px solid var(--accent); border-radius:10px; color:var(--accent); text-decoration:none; }
   input[type=file] { display:none; }
+  #openSaved { display:none; }
   .musicrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .musicrow button { padding:8px 14px; font-family:inherit; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:8px; cursor:pointer; }
   #musicName { color:var(--sub); font-size:13px; word-break:break-all; }
@@ -98,10 +99,22 @@
     <div class="hint">음악이 영상보다 짧으면 반복하고, 길면 잘라 붙입니다. 끝 2초는 서서히 작아집니다.</div>
   </div>
 
+  <div class="card">
+    <h2>6. 저장 위치</h2>
+    <div class="musicrow">
+      <button type="button" id="dirBtn">저장 폴더 고르기</button>
+      <span id="dirName">고르지 않으면 브라우저의 다운로드 폴더로 저장됩니다</span>
+    </div>
+    <div class="hint" id="dirHint">한 번 골라 두면 다음에도 기억합니다. 영상은 만들어지는 대로 그 폴더에 자동으로 저장됩니다.</div>
+  </div>
+
   <button class="go" id="go" disabled>영상 만들기</button>
+  <button class="go" id="cancel" style="display:none;margin-top:8px;background:transparent;color:var(--ink);border:1px solid var(--line)">취소</button>
   <progress id="bar" max="100" value="0"></progress>
   <div id="status"></div>
   <video id="preview" controls playsinline></video>
+  <div id="saved" style="margin-top:12px;font-size:14px"></div>
+  <button type="button" class="go open" id="openSaved" style="margin-top:8px">저장된 영상 열기</button>
   <a class="dl" id="dl">mp4 내려받기</a>
 </main>
 
@@ -1991,6 +2004,38 @@ if (!('VideoEncoder' in window) || !('AudioEncoder' in window)) {
   status('이 브라우저는 영상 변환을 지원하지 않습니다. 최신 크롬이나 엣지에서 열어 주세요.', true);
 }
 
+// ---- 저장 폴더 (크롬·엣지의 폴더 접근 기능)
+const hasDirApi = 'showDirectoryPicker' in window;
+let dirHandle = null, savedFile = null;
+const idb = () => new Promise((res, rej) => {
+  const r = indexedDB.open('img2mp4', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+});
+const idbGet = async k => { const d = await idb(); return new Promise(res => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); };
+const idbSet = async (k, v) => { const d = await idb(); return new Promise(res => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(); t.onerror = () => res(); }); };
+if (!hasDirApi) { $('dirBtn').style.display = 'none'; $('dirName').textContent = '이 브라우저는 폴더 지정이 안 됩니다. 다운로드 폴더로 저장됩니다.'; $('dirHint').style.display = 'none'; }
+else {
+  idbGet('dir').then(h => { if (h) { dirHandle = h; $('dirName').textContent = h.name + ' (이전에 고른 폴더)'; } }).catch(() => {});
+  $('dirBtn').onclick = async () => {
+    try {
+      dirHandle = await showDirectoryPicker({ id: 'img2mp4', mode: 'readwrite', startIn: 'videos' });
+      $('dirName').textContent = dirHandle.name;
+      try { await idbSet('dir', dirHandle); } catch {}
+    } catch {}
+  };
+}
+async function dirReady() {
+  if (!dirHandle) return false;
+  try {
+    if ((await dirHandle.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+    return (await dirHandle.requestPermission({ mode: 'readwrite' })) === 'granted';
+  } catch { return false; }
+}
+$('openSaved').onclick = async () => {
+  try { window.open(URL.createObjectURL(await savedFile.getFile()), '_blank'); } catch { status('파일을 열 수 없습니다. 저장 폴더에서 직접 열어 주세요.', true); }
+};
+
 // ---- 사진 고르기
 async function setImage(file) {
   if (!file || !file.type.startsWith('image/')) return;
@@ -2069,6 +2114,8 @@ async function renderAudio(buf, seconds) {
 }
 
 // ---- 만들기
+let cancelled = false;
+$('cancel').onclick = () => { cancelled = true; status('취소하는 중…'); };
 $('go').onclick = async () => {
   let seconds = val('dur') === 'music' ? 0 : +val('dur');
   const fx = val('fx');
@@ -2079,10 +2126,15 @@ $('go').onclick = async () => {
   const fit = val('fit');
   const bar = $('bar');
   $('go').disabled = true;
+  const saveToDir = await dirReady();
+  cancelled = false;
+  $('cancel').style.display = 'block';
+  $('saved').textContent = ''; $('openSaved').style.display = 'none';
   bar.style.display = 'block'; bar.value = 0;
   $('preview').style.display = 'none'; $('dl').style.display = 'none';
   if (outUrl) { URL.revokeObjectURL(outUrl); outUrl = null; }
 
+  const encs = [];
   try {
     // 컴퓨터마다 되는 H.264 설정이 달라서, 되는 것을 찾을 때까지 차례로 시도한다
     const bitrate = fx === 'none' ? 2_500_000 : 4_000_000;
@@ -2109,10 +2161,12 @@ $('go').onclick = async () => {
     });
 
     let fatal = null;
+    const check = () => { if (cancelled) throw new Error('취소했습니다.'); if (fatal) throw fatal; };
     const venc = new VideoEncoder({
       output: (c, m) => muxer.addVideoChunk(c, m),
       error: e => { fatal = e; },
     });
+    encs.push(venc);
     venc.configure(vcfg);
 
     // 음악
@@ -2123,6 +2177,7 @@ $('go').onclick = async () => {
       if (!(await AudioEncoder.isConfigSupported(acfg)).supported) throw new Error('이 브라우저는 음악(AAC) 넣기를 지원하지 않습니다.');
       pcm = await renderAudio(buf, seconds);
       const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { fatal = e; } });
+      encs.push(aenc);
       aenc.configure(acfg);
       const CHUNK = SR;
       const total = pcm.length;
@@ -2133,7 +2188,7 @@ $('go').onclick = async () => {
         const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: CH, timestamp: Math.round(pos / SR * 1e6), data });
         aenc.encode(ad); ad.close();
         if (aenc.encodeQueueSize > 20) await new Promise(r => setTimeout(r, 10));
-        if (fatal) throw fatal;
+        check();
       }
       await aenc.flush(); aenc.close();
       pcm = null;
@@ -2160,7 +2215,7 @@ $('go').onclick = async () => {
       venc.encode(vf, { keyFrame: i % FPS === 0 });
       vf.close();
       while (venc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 2));
-      if (fatal) throw fatal;
+      check();
       if (i % 12 === 0) {
         bar.value = i / frames * 100;
         if (i > 0) {
@@ -2171,7 +2226,7 @@ $('go').onclick = async () => {
       }
     }
     await venc.flush(); venc.close();
-    if (fatal) throw fatal;
+    check();
     muxer.finalize();
 
     const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
@@ -2184,9 +2239,23 @@ $('go').onclick = async () => {
     dl.textContent = `mp4 내려받기 (${(blob.size / 1048576).toFixed(1)}MB)`;
     dl.style.display = 'block';
     status('완성되었습니다.');
+    if (saveToDir) {
+      try {
+        const d = new Date(), z = n => String(n).padStart(2, '0');
+        const name = `영상_${land ? '가로' : '세로'}_${seconds}초_${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.mp4`;
+        const fh = await dirHandle.getFileHandle(name, { create: true });
+        const w = await fh.createWritable();
+        await w.write(blob); await w.close();
+        savedFile = fh;
+        $('saved').textContent = `저장했습니다: ${dirHandle.name} 폴더 / ${name}`;
+        $('openSaved').style.display = 'block';
+      } catch { $('saved').textContent = '폴더에 저장하지 못했습니다. 아래 버튼으로 내려받아 주세요.'; }
+    }
   } catch (e) {
     status(e.message || String(e), true);
   } finally {
+    for (const e of encs) { try { e.close(); } catch {} }
+    $('cancel').style.display = 'none';
     $('go').disabled = false;
   }
 };
