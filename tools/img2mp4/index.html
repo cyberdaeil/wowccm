@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사진 → 영상 만들기</title>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#222; --sub:#777; --line:#ddd8cc; --accent:#2f5d8a; --accent-ink:#fff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#17181b; --card:#222428; --ink:#eee; --sub:#9a9ca3; --line:#383b42; --accent:#6fa3d6; --accent-ink:#10151b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"맑은 고딕","Malgun Gothic",system-ui,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.lead { color:var(--sub); margin:0 0 20px; font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
+  .card h2 { font-size:15px; margin:0 0 10px; }
+  .drop { border:2px dashed var(--line); border-radius:10px; padding:22px; text-align:center; color:var(--sub); cursor:pointer; }
+  .drop.has { padding:8px; border-style:solid; }
+  .drop img { max-width:100%; max-height:260px; display:block; margin:0 auto; border-radius:6px; }
+  .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .opts label { flex:1 1 120px; border:1px solid var(--line); border-radius:8px; padding:10px; text-align:center; cursor:pointer; font-size:14px; }
+  .opts input { display:none; }
+  .opts label:has(input:checked) { border-color:var(--accent); background:var(--accent); color:var(--accent-ink); }
+  .hint { color:var(--sub); font-size:12.5px; margin-top:8px; }
+  button.go { width:100%; padding:14px; font-size:16px; font-family:inherit; border:0; border-radius:10px; background:var(--accent); color:var(--accent-ink); cursor:pointer; }
+  button.go:disabled { opacity:.45; cursor:default; }
+  progress { width:100%; height:10px; margin-top:12px; display:none; }
+  #status { margin-top:10px; font-size:14px; min-height:20px; }
+  #status.err { color:#c0392b; }
+  video { width:100%; border-radius:8px; margin-top:12px; background:#000; display:none; }
+  a.dl { display:none; margin-top:12px; text-align:center; padding:12px; border:1px solid var(--accent); border-radius:10px; color:var(--accent); text-decoration:none; }
+  input[type=file] { display:none; }
+  .musicrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .musicrow button { padding:8px 14px; font-family:inherit; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:8px; cursor:pointer; }
+  #musicName { color:var(--sub); font-size:13px; word-break:break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>사진 → 영상 만들기</h1>
+  <p class="lead">사진 한 장과 음악으로 mp4 영상을 만듭니다. 파일은 내 컴퓨터 안에서만 처리되고 어디로도 올라가지 않습니다.</p>
+
+  <div class="card">
+    <h2>1. 사진</h2>
+    <div class="drop" id="drop">여기를 눌러 사진을 고르세요<br><small>(끌어다 놓아도 됩니다)</small></div>
+    <input type="file" id="imgFile" accept="image/*">
+  </div>
+
+  <div class="card">
+    <h2>2. 길이</h2>
+    <div class="opts" id="durOpts">
+      <label><input type="radio" name="dur" value="30" checked>30초</label>
+      <label><input type="radio" name="dur" value="60">1분</label>
+      <label><input type="radio" name="dur" value="90">1분 30초</label>
+      <label><input type="radio" name="dur" value="120">2분</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. 화면 방향 (1080)</h2>
+    <div class="opts">
+      <label><input type="radio" name="ori" value="land" checked>가로 1920×1080</label>
+      <label><input type="radio" name="ori" value="port">세로 1080×1920</label>
+    </div>
+    <div class="opts" style="margin-top:8px">
+      <label><input type="radio" name="fit" value="contain" checked>사진 전체 보이게 (빈 곳은 검정)</label>
+      <label><input type="radio" name="fit" value="cover">화면 꽉 채우기 (넘치는 부분 잘림)</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4. 음악 (선택)</h2>
+    <div class="musicrow">
+      <button type="button" id="musicBtn">음악 파일 고르기</button>
+      <button type="button" id="musicClear" style="display:none">빼기</button>
+      <span id="musicName">없으면 무음 영상이 됩니다</span>
+    </div>
+    <input type="file" id="musicFile" accept="audio/*">
+    <div class="hint">음악이 영상보다 짧으면 반복하고, 길면 잘라 붙입니다. 끝 2초는 서서히 작아집니다.</div>
+  </div>
+
+  <button class="go" id="go" disabled>영상 만들기</button>
+  <progress id="bar" max="100" value="0"></progress>
+  <div id="status"></div>
+  <video id="preview" controls playsinline></video>
+  <a class="dl" id="dl">mp4 내려받기</a>
+</main>
+
+<script type="module">
+import { Muxer, ArrayBufferTarget } from './mp4-muxer.mjs';
+
+const $ = id => document.getElementById(id);
+const FPS = 5, SR = 48000, CH = 2;
+let image = null, music = null, outUrl = null;
+
+const status = (t, err) => { $('status').textContent = t; $('status').className = err ? 'err' : ''; };
+const val = n => document.querySelector(`input[name=${n}]:checked`).value;
+
+if (!('VideoEncoder' in window) || !('AudioEncoder' in window)) {
+  status('이 브라우저는 영상 변환을 지원하지 않습니다. 최신 크롬이나 엣지에서 열어 주세요.', true);
+}
+
+// ---- 사진 고르기
+async function setImage(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  try { image = await createImageBitmap(file); } catch { status('이 사진을 열 수 없습니다.', true); return; }
+  const d = $('drop');
+  d.classList.add('has');
+  d.innerHTML = '';
+  const im = new Image();
+  im.src = URL.createObjectURL(file);
+  d.appendChild(im);
+  $('go').disabled = !('VideoEncoder' in window);
+  status('');
+}
+$('drop').onclick = () => $('imgFile').click();
+$('imgFile').onchange = e => setImage(e.target.files[0]);
+$('drop').ondragover = e => e.preventDefault();
+$('drop').ondrop = e => { e.preventDefault(); setImage(e.dataTransfer.files[0]); };
+
+// ---- 음악 고르기
+$('musicBtn').onclick = () => $('musicFile').click();
+$('musicFile').onchange = e => {
+  music = e.target.files[0] || null;
+  $('musicName').textContent = music ? music.name : '없으면 무음 영상이 됩니다';
+  $('musicClear').style.display = music ? '' : 'none';
+};
+$('musicClear').onclick = () => { music = null; $('musicFile').value = ''; $('musicName').textContent = '없으면 무음 영상이 됩니다'; $('musicClear').style.display = 'none'; };
+
+// ---- 한 장 그리기
+function drawFrame(canvas, w, h, fit) {
+  const g = canvas.getContext('2d');
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, w, h);
+  const s = (fit === 'cover' ? Math.max : Math.min)(w / image.width, h / image.height);
+  const dw = image.width * s, dh = image.height * s;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
+// ---- 음악을 영상 길이에 맞춰 PCM으로
+async function renderAudio(file, seconds) {
+  const raw = await file.arrayBuffer();
+  const tmp = new AudioContext();
+  let buf;
+  try { buf = await tmp.decodeAudioData(raw); } finally { tmp.close(); }
+  const off = new OfflineAudioContext(CH, SR * seconds, SR);
+  const src = off.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  const gain = off.createGain();
+  gain.gain.setValueAtTime(1, 0);
+  gain.gain.setValueAtTime(1, Math.max(0, seconds - 2));
+  gain.gain.linearRampToValueAtTime(0, seconds);
+  src.connect(gain).connect(off.destination);
+  src.start();
+  return off.startRendering();
+}
+
+// ---- 만들기
+$('go').onclick = async () => {
+  const seconds = +val('dur');
+  const land = val('ori') === 'land';
+  const W = land ? 1920 : 1080, H = land ? 1080 : 1920;
+  const fit = val('fit');
+  const bar = $('bar');
+  $('go').disabled = true;
+  bar.style.display = 'block'; bar.value = 0;
+  $('preview').style.display = 'none'; $('dl').style.display = 'none';
+  if (outUrl) { URL.revokeObjectURL(outUrl); outUrl = null; }
+
+  try {
+    const vcfg = { codec: 'avc1.64002A', width: W, height: H, bitrate: 2_500_000, framerate: FPS };
+    const vs = await VideoEncoder.isConfigSupported(vcfg);
+    if (!vs.supported) throw new Error('이 브라우저는 mp4(H.264) 영상 만들기를 지원하지 않습니다. 크롬이나 엣지를 써 주세요.');
+
+    const muxer = new Muxer({
+      target: new ArrayBufferTarget(),
+      video: { codec: 'avc', width: W, height: H, frameRate: FPS },
+      audio: music ? { codec: 'aac', numberOfChannels: CH, sampleRate: SR } : undefined,
+      fastStart: 'in-memory',
+    });
+
+    let fatal = null;
+    const venc = new VideoEncoder({
+      output: (c, m) => muxer.addVideoChunk(c, m),
+      error: e => { fatal = e; },
+    });
+    venc.configure(vcfg);
+
+    // 음악
+    let pcm = null;
+    if (music) {
+      status('음악을 준비하는 중…');
+      const acfg = { codec: 'mp4a.40.2', numberOfChannels: CH, sampleRate: SR, bitrate: 128_000 };
+      if (!(await AudioEncoder.isConfigSupported(acfg)).supported) throw new Error('이 브라우저는 음악(AAC) 넣기를 지원하지 않습니다.');
+      try { pcm = await renderAudio(music, seconds); }
+      catch { throw new Error('음악 파일을 읽을 수 없습니다. mp3, m4a, wav 파일을 써 주세요.'); }
+      const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { fatal = e; } });
+      aenc.configure(acfg);
+      const CHUNK = SR;
+      const total = pcm.length;
+      for (let pos = 0; pos < total; pos += CHUNK) {
+        const n = Math.min(CHUNK, total - pos);
+        const data = new Float32Array(n * CH);
+        for (let c = 0; c < CH; c++) data.set(pcm.getChannelData(c).subarray(pos, pos + n), c * n);
+        const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: CH, timestamp: Math.round(pos / SR * 1e6), data });
+        aenc.encode(ad); ad.close();
+        if (aenc.encodeQueueSize > 20) await new Promise(r => setTimeout(r, 10));
+        if (fatal) throw fatal;
+      }
+      await aenc.flush(); aenc.close();
+      pcm = null;
+    }
+
+    // 영상
+    status('영상을 만드는 중…');
+    const canvas = new OffscreenCanvas(W, H);
+    drawFrame(canvas, W, H, fit);
+    const frames = seconds * FPS;
+    for (let i = 0; i < frames; i++) {
+      const vf = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+      venc.encode(vf, { keyFrame: i % FPS === 0 });
+      vf.close();
+      if (venc.encodeQueueSize > 10) await new Promise(r => setTimeout(r, 5));
+      if (fatal) throw fatal;
+      if (i % 10 === 0) { bar.value = i / frames * 100; await new Promise(r => setTimeout(r)); }
+    }
+    await venc.flush(); venc.close();
+    if (fatal) throw fatal;
+    muxer.finalize();
+
+    const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+    outUrl = URL.createObjectURL(blob);
+    bar.value = 100;
+    $('preview').src = outUrl; $('preview').style.display = 'block';
+    const dl = $('dl');
+    dl.href = outUrl;
+    dl.download = `영상_${land ? '가로' : '세로'}_${seconds}초.mp4`;
+    dl.textContent = `mp4 내려받기 (${(blob.size / 1048576).toFixed(1)}MB)`;
+    dl.style.display = 'block';
+    status('완성되었습니다.');
+  } catch (e) {
+    status(e.message || String(e), true);
+  } finally {
+    $('go').disabled = false;
+  }
+};
+</script>
+</body>
+</html>
