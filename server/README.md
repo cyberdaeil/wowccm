@@ -90,6 +90,16 @@
   - `"error":"quotaExceeded"` 등 → 유튜브 쪽 문제. 아이콘은 회색으로 둡니다.
 - JS를 바꿨다면 `index.html`의 `video-live.js?v=1`을 `?v=2`로 올려 브라우저가 새 파일을 받게 합니다. 같은 파일의 `<a id="videoRadio" href="...">` 주소도 `https://www.youtube.com/@wowccm/live`로 바꾸면 좋습니다.
 
+## player_lists.php: 진행 중인 이벤트 · 다시듣기 8회
+
+- 올릴 위치: `wowcast/player_lists.php` (설정할 것은 없습니다)
+- `?type=events`: 이벤트 게시판(`event`)에서 **이벤트 기간 안에 있는 글**만 보냅니다.
+  - 기간은 본문의 "진행 기간: 2026.10.21 ~ 2026.11.05" 같은 줄에서 읽습니다. 본문에 없으면 게시판의 응모 기간 칸(여분 필드)을 씁니다.
+  - 제목이 [종료]·[마감]·[당첨자발표]로 시작하면 기간과 상관없이 뺍니다.
+  - 이벤트 게시판은 RSS가 꺼져 있어서, 이 파일이 없으면 플레이어에 이벤트가 나오지 않습니다.
+- `?type=recasts&limit=8`: 다시듣기 최근 8회. 미니 페이지(5회)와 같은 회차를 가리킬 때만 앱이 이 목록을 씁니다.
+- 확인: `player_lists.php?type=events&diag=1`, `player_lists.php?type=recasts&diag=1` (판단 근거를 함께 보여 줍니다)
+
 ## visible_embed.php: 플레이어 안에서 영상 재생
 
 보이는 방송을 플레이어 안에서 보여 줄 때 이 페이지를 거칩니다.

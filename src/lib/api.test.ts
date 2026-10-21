@@ -7,6 +7,9 @@ import {
   markOnAir,
   parseMiniPage,
   parseActiveEvents,
+  parsePlayerEvents,
+  parsePlayerRecasts,
+  pickRecasts,
   parseNotices,
   parsePlayerRequests,
   parseRequests,
@@ -172,5 +175,43 @@ describe("이벤트", () => {
       "공지3",
     ]);
     expect(interleave([n("공지1")], []).map((x) => x.kind)).toEqual(["notice"]);
+  });
+});
+
+describe("앱 전용 이벤트·다시듣기 목록 (player_lists.php)", () => {
+  it("서버가 보낸 진행 중 이벤트를 이벤트로 표시한다", () => {
+    const body = JSON.stringify({
+      ok: true,
+      items: [
+        { title: "MYCCM 출간 기념 이벤트", link: "https://wowccm.net/bbs/board.php?bo_table=event&wr_id=1", date: "10-20", start: "2026-10-21", end: "2026-11-05" },
+        { title: "다른 사이트 주소", link: "https://example.com/x", date: "10-20" },
+      ],
+    });
+    expect(parsePlayerEvents(body)).toEqual([
+      { title: "MYCCM 출간 기념 이벤트", link: "https://wowccm.net/bbs/board.php?bo_table=event&wr_id=1", date: "10-20", kind: "event" },
+    ]);
+  });
+
+  it("서버 오류면 예외를 던져 RSS로 넘어간다", () => {
+    expect(() => parsePlayerEvents(JSON.stringify({ ok: false, error: "board_query_failed" }))).toThrow();
+    expect(() => parsePlayerEvents("<html>404</html>")).toThrow();
+  });
+
+  const r = (n: number) => ({ program: `프로그램${n}`, date: `10월 ${20 - n}일 방송`, audio: `http://wowccm.synology.me/podcast/p${n}.mp3` });
+  const page = [0, 1, 2, 3, 4].map(r);
+  const api = [0, 1, 2, 3, 4, 5, 6, 7].map(r);
+
+  it("다시듣기 8개를 읽는다", () => {
+    expect(parsePlayerRecasts(JSON.stringify({ ok: true, items: api }))).toHaveLength(8);
+    expect(parsePlayerRecasts(JSON.stringify({ ok: true, items: [{ program: "x", date: "y", audio: "" }] }))).toEqual([]);
+  });
+
+  it("미니 페이지와 같은 회차를 가리킬 때만 더 긴 목록을 쓴다", () => {
+    expect(pickRecasts(page, api)).toHaveLength(8);
+    expect(pickRecasts(page, null)).toBe(page);
+    expect(pickRecasts(page, [])).toBe(page);
+    // 음성 주소를 잘못 읽은 경우 → 미니 페이지 5개를 그대로
+    expect(pickRecasts(page, api.map((x) => ({ ...x, audio: x.audio + "?wrong" })))).toBe(page);
+    expect(pickRecasts([], api)).toBe(api);
   });
 });

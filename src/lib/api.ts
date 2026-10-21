@@ -216,8 +216,36 @@ export function parseMiniPage(html: string, now = new Date()) {
   return { recasts, schedule: markOnAir(rows, now) };
 }
 
+/** 앱 전용 다시듣기 목록 (server/player_lists.php) */
+export function parsePlayerRecasts(body: string): RecastItem[] {
+  const d = JSON.parse(body);
+  if (!d?.ok || !Array.isArray(d.items)) throw new Error(d?.error ?? "bad_response");
+  return d.items
+    .map((r: Partial<RecastItem>) => ({ program: clean(r.program), date: clean(r.date), audio: clean(r.audio) }))
+    .filter((r: RecastItem) => /^https?:\/\//.test(r.audio));
+}
+
+/**
+ * 앱 전용 목록이 미니 페이지와 같은 회차를 가리키는지 확인한다.
+ * 서버 파일이 게시판 칸을 잘못 읽었으면(음성 주소가 다르면) 쓰지 않는다.
+ */
+export function pickRecasts(fromPage: RecastItem[], fromApi: RecastItem[] | null): RecastItem[] {
+  if (!fromApi || fromApi.length === 0) return fromPage;
+  if (fromPage.length === 0) return fromApi;
+  const apiAudios = new Set(fromApi.map((r) => r.audio));
+  return apiAudios.has(fromPage[0].audio) && fromApi.length > fromPage.length ? fromApi : fromPage;
+}
+
 export async function getMiniPage() {
-  return parseMiniPage(await miniGet(API.miniPage, (b) => b.includes("scheduleTemplate") || b.includes("recastTemplate")));
+  const [page, more] = await Promise.all([
+    miniGet(API.miniPage, (b) => b.includes("scheduleTemplate") || b.includes("recastTemplate")).then((x) =>
+      parseMiniPage(x),
+    ),
+    wowGet(API.playerRecasts)
+      .then(parsePlayerRecasts)
+      .catch(() => null),
+  ]);
+  return { ...page, recasts: pickRecasts(page.recasts, more) };
 }
 
 /** 공지사항 RSS. 링크의 &amp;가 두 번 이스케이프되어 오므로 한 번 더 풀어 준다. */
@@ -262,14 +290,35 @@ export function interleave(notices: Notice[], events: Notice[]): Notice[] {
   return out;
 }
 
+/** 앱 전용 이벤트 목록 (server/player_lists.php). 서버가 이벤트 기간 안에 있는 글만 보내 준다 */
+export function parsePlayerEvents(body: string, limit = 3): Notice[] {
+  const d = JSON.parse(body);
+  if (!d?.ok || !Array.isArray(d.items)) throw new Error(d?.error ?? "bad_response");
+  return d.items
+    .map((e: { title?: string; link?: string; date?: string }) => ({
+      title: clean(e.title),
+      link: clean(e.link),
+      date: clean(e.date),
+      kind: "event" as const,
+    }))
+    .filter((e: Notice) => e.title && /^https:\/\/wowccm\.net\//.test(e.link))
+    .slice(0, limit);
+}
+
+/** 진행 중인 이벤트: 앱 전용 목록 → (없으면) 이벤트 게시판 RSS */
+async function getEvents(): Promise<Notice[]> {
+  try {
+    return parsePlayerEvents(await wowGet(API.playerEvents));
+  } catch {
+    return wowGet(API.events)
+      .then((x) => parseActiveEvents(x))
+      .catch(() => [] as Notice[]);
+  }
+}
+
 /** 맨 아래 한 줄에 돌아가며 보여 줄 공지·이벤트. 이벤트 게시판을 못 읽어도 공지는 나온다 */
 export async function getNotices(): Promise<Notice[]> {
-  const [notices, events] = await Promise.all([
-    wowGet(API.notices).then((x) => parseNotices(x)),
-    wowGet(API.events)
-      .then((x) => parseActiveEvents(x))
-      .catch(() => [] as Notice[]),
-  ]);
+  const [notices, events] = await Promise.all([wowGet(API.notices).then((x) => parseNotices(x)), getEvents()]);
   return interleave(notices, events);
 }
 
