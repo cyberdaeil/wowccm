@@ -87,3 +87,44 @@ export async function youtubeLive(): Promise<YoutubeLive> {
   }
   return invoke<YoutubeLive>("youtube_live");
 }
+
+// ── 컴퓨터를 켜면 자동 실행 ─────────────────────────────────────
+
+/** 자동 실행이 켜져 있는가. 앱 밖(브라우저 미리보기)에서는 null */
+export async function autostartEnabled(): Promise<boolean | null> {
+  if (!isTauri) return null;
+  try {
+    const m = await import("@tauri-apps/plugin-autostart");
+    return await m.isEnabled();
+  } catch {
+    return null;
+  }
+}
+
+export async function setAutostart(on: boolean): Promise<boolean> {
+  if (!isTauri) return false;
+  const m = await import("@tauri-apps/plugin-autostart");
+  if (on) await m.enable();
+  else await m.disable();
+  return m.isEnabled();
+}
+
+// ── Windows 볼륨 팝업·Mac 제어 센터에 곡 정보 표시 ──────────────
+
+export interface MediaInfo {
+  title: string;
+  artist: string;
+  cover: string | null;
+  playing: boolean;
+}
+
+/** Windows는 앱(Rust)이 직접 표시한다. Mac은 화면 쪽 navigator.mediaSession이 맡는다. */
+export function mediaUpdate(info: MediaInfo) {
+  if (isTauri) void invoke("media_update", { ...info }).catch(() => {});
+}
+
+/** 키보드 미디어 키·볼륨 팝업의 재생/정지 버튼 */
+export function onMediaControl(cb: (action: "play" | "pause" | "toggle" | "stop") => void): Promise<UnlistenFn> {
+  if (!isTauri) return Promise.resolve(() => {});
+  return listen<"play" | "pause" | "toggle" | "stop">("media-control", (e) => cb(e.payload));
+}

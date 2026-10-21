@@ -1,3 +1,4 @@
+mod media;
 mod now_playing;
 mod wow_api;
 mod youtube;
@@ -66,6 +67,11 @@ pub fn run() {
         // 자동 업데이트: GitHub Releases의 latest.json을 보고 새 버전을 받아 설치한 뒤 다시 실행
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        // 컴퓨터를 켜면 자동 실행 (설정에서 켜고 끈다. Mac은 로그인 항목으로 등록)
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .invoke_handler(tauri::generate_handler![
             now_playing,
             wow_api::wow_get,
@@ -73,7 +79,8 @@ pub fn run() {
             youtube::youtube_live,
             set_window_mode,
             hide_to_tray,
-            quit_app
+            quit_app,
+            media::media_update
         ])
         .setup(|app| {
             let toggle = MenuItem::with_id(app, "toggle", "재생 / 정지", true, None::<&str>)?;
@@ -107,6 +114,7 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+            media::setup(app.handle());
             Ok(())
         })
         .on_window_event(|window, event| {

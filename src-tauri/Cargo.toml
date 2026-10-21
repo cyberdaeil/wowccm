@@ -18,11 +18,16 @@ tauri-plugin-single-instance = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tauri-plugin-autostart = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2", "cookies"] }
 encoding_rs = "0.8"
 tokio = { version = "1", features = ["time"] }
+
+# Windows 볼륨 팝업(시스템 미디어 컨트롤)에 곡 정보를 띄우고 미디어 키를 받는다
+[target.'cfg(windows)'.dependencies]
+souvlaki = { version = "0.8", default-features = false }
 
 [profile.release]
 codegen-units = 1

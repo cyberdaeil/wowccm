@@ -31,6 +31,8 @@ export function usePlayer(streamUrl: string) {
   const [message, setMessage] = useState("재생 버튼을 눌러 방송을 들어보세요.");
   const [volume, setVolumeState] = useState(loadVolume);
   const [muted, setMuted] = useState(false);
+  /** 취침 예약으로 소리를 줄일 때 쓰는 배율. 저장하는 볼륨은 바꾸지 않는다 */
+  const [fade, setFade] = useState(1);
 
   const connect = useCallback(() => {
     const a = live.current;
@@ -128,16 +130,19 @@ export function usePlayer(streamUrl: string) {
   useEffect(() => {
     [live.current, recast.current].forEach((x) => {
       if (x) {
-        x.volume = volume;
+        x.volume = Math.max(0, Math.min(1, volume * fade));
         x.muted = muted;
       }
     });
+  }, [volume, muted, fade]);
+
+  useEffect(() => {
     try {
       localStorage.setItem(VOLUME_KEY, String(volume));
     } catch {
       /* 저장 실패는 무시 */
     }
-  }, [volume, muted]);
+  }, [volume]);
 
   const play = useCallback(() => {
     clearRecast();
@@ -163,6 +168,13 @@ export function usePlayer(streamUrl: string) {
     const r = recast.current;
     if (r && !r.paused) r.pause();
     return wasLive;
+  }, [stop]);
+
+  /** 취침 예약 시간이 되면 생방송·다시듣기를 모두 끈다 */
+  const sleepStop = useCallback(() => {
+    stop("취침 예약 시간이 되어 방송을 껐습니다. 편히 주무세요.");
+    const r = recast.current;
+    if (r && !r.paused) r.pause();
   }, [stop]);
 
   const toggle = useCallback(() => {
@@ -201,6 +213,8 @@ export function usePlayer(streamUrl: string) {
     play,
     stop,
     pauseForVideo,
+    sleepStop,
+    setFade,
     recastUrl,
     recastPlaying,
     toggleRecast,

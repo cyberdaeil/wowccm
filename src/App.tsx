@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LINKS, REFRESH, STATION } from "./config";
 import {
   embedSrc,
@@ -15,6 +15,7 @@ import {
 import { usePlayer } from "./lib/usePlayer";
 import { usePolling } from "./lib/usePolling";
 import { useMediaSession } from "./lib/useMediaSession";
+import { useSleepTimer, useTheme } from "./lib/settings";
 import { hideToTray, onCloseRequested, onTrayToggle, openUrl, quitApp, setWindowMode } from "./lib/tauri";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
@@ -26,6 +27,7 @@ import { SchedulePanel } from "./components/SchedulePanel";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { UpdateBar } from "./components/UpdateBar";
 import { CloseNotice } from "./components/CloseNotice";
+import { SettingsMenu } from "./components/SettingsMenu";
 import { useUpdater } from "./lib/useUpdater";
 
 type Tab = "request" | "recast" | "schedule";
@@ -83,6 +85,9 @@ export default function App() {
   const [sideOpen, setSideOpen] = useState(loadSideOpen);
   const updater = useUpdater();
   const [closeNotice, setCloseNotice] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const theme = useTheme();
+  const sleep = useSleepTimer(player.sleepStop, player.setFade);
 
   // 켜자마자 방송 재생 (한 번만)
   const autoplayed = useRef(false);
@@ -137,8 +142,8 @@ export default function App() {
   };
 
   useMediaSession(
-    programName || "WOWCCM LIVE",
-    songText || "WOWCCM",
+    songText || programName || "WOWCCM LIVE",
+    programName ? `${programName} · WOWCCM` : "WOWCCM 24시간 찬양방송",
     dj.data ?? null,
     player.playing,
     player.play,
@@ -171,7 +176,10 @@ export default function App() {
     }
   }, [player.status, videoSrc]);
 
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
+
   const goMini = (m: boolean) => {
+    if (m) setSettingsOpen(false);
     if (m && videoSrc) closeVideo();
     setMini(m);
     setWindowMode(m ? "mini" : sideOpen ? "wide" : "player", pinned);
@@ -224,7 +232,20 @@ export default function App() {
         sideOpen={sideOpen}
         onToggleSide={toggleSide}
         onClose={requestClose}
+        settingsOpen={settingsOpen}
+        onSettings={() => setSettingsOpen((o) => !o)}
+        sleepLeft={sleep.minutesLeft}
       />
+      {settingsOpen && (
+        <SettingsMenu
+          theme={theme.pref}
+          onTheme={theme.setPref}
+          sleepLeft={sleep.minutesLeft}
+          sleepChosen={sleep.chosen}
+          onSleep={(m) => (m === null ? sleep.cancel() : sleep.start(m))}
+          onClose={closeSettings}
+        />
+      )}
       {closeNotice && (
         <CloseNotice
           onHide={() => {

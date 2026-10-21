@@ -23,7 +23,8 @@
         "maximizable": false,
         "decorations": false,
         "transparent": false,
-        "center": true
+        "center": true,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,HardwareMediaKeyHandling,MediaSessionService --autoplay-policy=no-user-gesture-required"
       }
     ],
     "security": {
