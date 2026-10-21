@@ -186,7 +186,9 @@ function wowccm_recasts(array $rows, int $limit): array
         $audio = wowccm_find_audio($r);
         if ($audio === '') continue;
         $date = trim(html_entity_decode(strip_tags((string)($r['wr_subject'] ?? '')), ENT_QUOTES, 'UTF-8'));
-        $program = trim((string)($r['ca_name'] ?? ''));
+        // 프로그램명: 여분 칸 1(wr_1) → 분류(ca_name) → 본문 첫 줄
+        $program = trim(strip_tags((string)($r['wr_1'] ?? '')));
+        if ($program === '' || preg_match('#^https?://#i', $program)) $program = trim((string)($r['ca_name'] ?? ''));
         if ($program === '') {
             // 본문 "엘샤인의 샤인데이 10월 19일 방송" → "엘샤인의 샤인데이"
             $first = explode("\n", wowccm_plain((string)($r['wr_content'] ?? '')))[0];
@@ -245,9 +247,10 @@ if ($type === 'events') {
 
 $limit = (int)($_GET['limit'] ?? WOWCCM_RECAST_DEFAULT);
 $limit = max(1, min(WOWCCM_RECAST_MAX, $limit ?: WOWCCM_RECAST_DEFAULT));
+// 미니 페이지와 같이 방송 날짜(글 시각) 순서로
 $rows = $read("select * from `{$prefix}" . WOWCCM_RECAST_BOARD . "`
                 where wr_is_comment = 0
-                order by wr_id desc
+                order by wr_datetime desc, wr_id desc
                 limit " . ($limit * 2));
 $data = ['items' => wowccm_recasts($rows, $limit)];
 if ($diag && $rows) {
