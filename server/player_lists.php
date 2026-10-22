@@ -6,6 +6,7 @@
  * 사용 예:
  *   player_lists.php?type=events          진행 중인 이벤트 (이벤트 기간 안에 있는 글)
  *   player_lists.php?type=recasts&limit=8 다시듣기 최근 회차
+ *   player_lists.php?type=notices         공지사항 최근 글 (개수는 아래 WOWCCM_NOTICE_COUNT)
  *   뒤에 &diag=1 을 붙이면 판단 근거를 함께 보여 준다 (점검용)
  *
  * - 이벤트 글은 비밀글이어도 제목은 게시판 목록에 보이므로 제목·주소만 내보낸다. 본문은 내보내지 않는다.
@@ -15,6 +16,10 @@
  * - 제목이 [종료], [마감], [당첨자발표], [결과]로 시작하면 기간과 상관없이 끝난 이벤트로 본다.
  */
 
+// ▼ 플레이어 맨 아래 줄에 보여 줄 공지 개수. 이 숫자만 바꾸면 와플을 업데이트하지 않아도 바로 바뀐다
+const WOWCCM_NOTICE_COUNT = 2;
+
+const WOWCCM_NOTICE_BOARD = 'news';
 const WOWCCM_EVENT_BOARD = 'event';
 const WOWCCM_RECAST_BOARD = 'recast';
 const WOWCCM_EVENT_FALLBACK_DAYS = 60;
@@ -164,6 +169,24 @@ function wowccm_active_events(array $rows, DateTimeImmutable $now, string $board
     return $diag ? ['items' => $items, 'checked' => $checked] : ['items' => $items];
 }
 
+/** 공지 글 행들 → 목록 (비밀글은 뺀다) */
+function wowccm_notices(array $rows, string $boardUrl, int $limit): array
+{
+    $items = [];
+    foreach ($rows as $r) {
+        if (strpos((string)($r['wr_option'] ?? ''), 'secret') !== false) continue;
+        $posted = new DateTimeImmutable((string)($r['wr_datetime'] ?? 'now'), wowccm_tz());
+        $items[] = [
+            'title' => trim(html_entity_decode(strip_tags((string)($r['wr_subject'] ?? '')), ENT_QUOTES, 'UTF-8')),
+            'link' => $boardUrl . '&wr_id=' . (int)$r['wr_id'],
+            'date' => $posted->format('m-d'),
+            'at' => $posted->format('c'),
+        ];
+        if (count($items) >= $limit) break;
+    }
+    return $items;
+}
+
 /** 글 안에서 mp3 주소 찾기 (링크 칸 → 여분 칸 → 본문 순서) */
 function wowccm_find_audio(array $r): string
 {
@@ -208,7 +231,7 @@ header('Cache-Control: no-store');
 
 $type = $_GET['type'] ?? '';
 $diag = isset($_GET['diag']);
-if (!in_array($type, ['events', 'recasts'], true)) {
+if (!in_array($type, ['events', 'recasts', 'notices'], true)) {
     echo json_encode(['ok' => false, 'error' => 'type_required']);
     exit;
 }
@@ -234,6 +257,16 @@ $read = static function (string $sql) {
     while ($row = sql_fetch_array($res)) $rows[] = $row;
     return $rows;
 };
+
+if ($type === 'notices') {
+    $rows = $read("select wr_id, wr_subject, wr_datetime, wr_option
+                     from `{$prefix}" . WOWCCM_NOTICE_BOARD . "`
+                    where wr_is_comment = 0
+                    order by wr_id desc
+                    limit " . (WOWCCM_NOTICE_COUNT + 10));
+    $boardUrl = 'https://wowccm.net/bbs/board.php?bo_table=' . WOWCCM_NOTICE_BOARD;
+    $out(['items' => wowccm_notices($rows, $boardUrl, max(1, WOWCCM_NOTICE_COUNT))]);
+}
 
 if ($type === 'events') {
     $rows = $read("select *

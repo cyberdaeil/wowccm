@@ -8,6 +8,7 @@ import {
   parseMiniPage,
   parseActiveEvents,
   parsePlayerEvents,
+  parsePlayerNotices,
   parsePlayerRecasts,
   pickRecasts,
   parseNotices,
@@ -213,5 +214,21 @@ describe("앱 전용 이벤트·다시듣기 목록 (player_lists.php)", () => {
     // 음성 주소를 잘못 읽은 경우 → 미니 페이지 5개를 그대로
     expect(pickRecasts(page, api.map((x) => ({ ...x, audio: x.audio + "?wrong" })))).toBe(page);
     expect(pickRecasts([], api)).toBe(api);
+  });
+});
+
+describe("앱 전용 공지 목록", () => {
+  it("서버가 보낸 개수 그대로 보여 준다", () => {
+    const body = JSON.stringify({
+      ok: true,
+      items: [
+        { title: "홈페이지가 새롭게 단장했습니다!", link: "https://wowccm.net/bbs/board.php?bo_table=news&wr_id=3235", date: "10-01", at: "2026-10-01T10:00:00+09:00" },
+        { title: "서버이전 안내", link: "https://wowccm.net/bbs/board.php?bo_table=news&wr_id=3227", date: "09-23", at: "2026-09-23T10:00:00+09:00" },
+      ],
+    });
+    expect(parsePlayerNotices(body).map((n) => n.title)).toEqual(["홈페이지가 새롭게 단장했습니다!", "서버이전 안내"]);
+  });
+  it("서버 오류면 예외를 던져 RSS로 넘어간다", () => {
+    expect(() => parsePlayerNotices(JSON.stringify({ ok: false, error: "type_required" }))).toThrow();
   });
 });

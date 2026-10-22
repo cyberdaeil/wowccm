@@ -19,7 +19,8 @@ export const API = {
   playerRequests: "/wowcast/player_requests.php?limit=7", // 앱 전용 사연 목록 7개 (server/player_requests.php)
   requests: "?mini_request_list=1", // MINI_PAGES 뒤에 붙인다. 사연 목록 HTML 조각 (4개, 위 파일이 없을 때 대신 사용)
   miniPage: "", // MINI_PAGES 자체. 다시듣기·편성표가 이 페이지 안에 들어 있다
-  notices: "/bbs/rss.php?bo_table=news", // 공지사항 게시판 RSS
+  playerNotices: "/wowcast/player_lists.php?type=notices", // 공지 (개수는 서버 파일의 WOWCCM_NOTICE_COUNT가 정한다)
+  notices: "/bbs/rss.php?bo_table=news", // 공지사항 게시판 RSS (위 파일이 없을 때 대신 사용)
   playerEvents: "/wowcast/player_lists.php?type=events", // 이벤트 기간 안에 있는 이벤트 (server/player_lists.php)
   playerRecasts: "/wowcast/player_lists.php?type=recasts&limit=8", // 다시듣기 8회 (server/player_lists.php)
   events: "/bbs/rss.php?bo_table=event", // 이벤트 게시판 RSS (위 파일이 없을 때 대신 사용. 게시판 RSS가 꺼져 있으면 비어 있다)
@@ -36,6 +37,9 @@ export const LINKS = {
 };
 
 // 갱신 주기 (ms)
+/** 서버 파일을 못 읽어 공지사항 RSS를 직접 쓸 때 보여 줄 공지 개수 */
+export const NOTICE_FALLBACK_COUNT = 2;
+
 export const REFRESH = {
   song: 10_000,
   program: 30_000,

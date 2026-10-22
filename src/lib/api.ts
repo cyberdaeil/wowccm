@@ -1,4 +1,4 @@
-import { API, MINI_PAGES, STATION } from "../config";
+import { API, MINI_PAGES, NOTICE_FALLBACK_COUNT, STATION } from "../config";
 import { fetchIcyTitle, wowGet, wowPostRequest, youtubeLive, type YoutubeLive } from "./tauri";
 
 export interface ProgramInfo {
@@ -305,6 +305,30 @@ export function parsePlayerEvents(body: string, limit = 3): Notice[] {
     .slice(0, limit);
 }
 
+/** 앱 전용 공지 목록 (server/player_lists.php). 몇 개를 보낼지는 서버가 정한다 */
+export function parsePlayerNotices(body: string): Notice[] {
+  const d = JSON.parse(body);
+  if (!d?.ok || !Array.isArray(d.items)) throw new Error(d?.error ?? "bad_response");
+  return d.items
+    .map((n: { title?: string; link?: string; date?: string; at?: string }) => ({
+      title: clean(n.title),
+      link: clean(n.link),
+      date: clean(n.date),
+      at: clean(n.at),
+    }))
+    .filter((n: Notice) => n.title && /^https:\/\/wowccm\.net\//.test(n.link))
+    .slice(0, 10);
+}
+
+/** 공지: 앱 전용 목록 → (없으면) 공지사항 게시판 RSS의 최근 글 몇 개 */
+async function getNoticeList(): Promise<Notice[]> {
+  try {
+    return parsePlayerNotices(await wowGet(API.playerNotices));
+  } catch {
+    return parseNotices(await wowGet(API.notices), NOTICE_FALLBACK_COUNT);
+  }
+}
+
 /** 진행 중인 이벤트: 앱 전용 목록 → (없으면) 이벤트 게시판 RSS */
 async function getEvents(): Promise<Notice[]> {
   try {
@@ -318,7 +342,7 @@ async function getEvents(): Promise<Notice[]> {
 
 /** 맨 아래 한 줄에 돌아가며 보여 줄 공지·이벤트. 이벤트 게시판을 못 읽어도 공지는 나온다 */
 export async function getNotices(): Promise<Notice[]> {
-  const [notices, events] = await Promise.all([wowGet(API.notices).then((x) => parseNotices(x)), getEvents()]);
+  const [notices, events] = await Promise.all([getNoticeList(), getEvents()]);
   return interleave(notices, events);
 }
 
